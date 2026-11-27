@@ -315,14 +315,34 @@ def _alnum(s: str) -> str:
     return re.sub(r"[^a-z0-9]", "", s.lower())
 
 
+_MERCHANT_LABEL = re.compile(r"^(.*?)\s*\(([^)]*)\)\s*$")
+
+
 def merchant_matches(merchant: str, host: str) -> bool:
-    """Is an idealo merchant ("MediaMarkt" or "mediamarkt.de") the shop at host?"""
-    m = merchant.strip().lower().removeprefix("www.")
+    """Is an idealo merchant the shop at host?
+
+    idealo names shops as "MediaMarkt", "mediamarkt.de" or "philips.de (Home-appliances)"
+    (a domain plus the shop's own label). A brand that owns its top-level domain runs shops
+    such as home-appliances.philips: the merchant "philips.de" matches it, and when idealo
+    adds a label ("Home-appliances") the host must contain that label too, so another
+    Philips shop is not mistaken for this one. A shared name alone ("amazon.de" vs
+    amazon.com) is never enough.
+    """
+    m = merchant.strip().lower()
     h = host.strip().lower().removeprefix("www.")
+    label: str | None = None
+    if parts := _MERCHANT_LABEL.match(m):
+        m, label = parts.group(1).strip(), _alnum(parts.group(2)) or None
+    m = m.removeprefix("www.")
+    host_labels = h.split(".")
     if "." in m:
-        return h == m or h.endswith("." + m)
-    labels = h.split(".")[:-1]
-    return bool(_alnum(m)) and any(_alnum(label) == _alnum(m) for label in labels)
+        if h == m or h.endswith("." + m):
+            return True
+        brand, tld = m.split(".")[0], host_labels[-1]
+        if len(tld) > 2 and _alnum(brand) == tld:  # brand-owned TLD such as .philips
+            return label is None or any(_alnum(lbl) == label for lbl in host_labels[:-1])
+        return False
+    return bool(_alnum(m)) and any(_alnum(lbl) == _alnum(m) for lbl in host_labels[:-1])
 
 
 async def prices_for_link(

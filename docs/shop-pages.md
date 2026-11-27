@@ -9,7 +9,10 @@ Code: `app/shop_page.py`. Tests: `tests/test_shop_page.py` (no network).
    (`product:price:amount`, `og:price:amount`, `itemprop="price"`). EUR only.
 2. **idealo fallback.** If the page has no readable price, idealo is searched for the product
    and the current offer **from the same shop** is used (`merchant_matches`). Another shop's
-   price is never put in the deal price field.
+   price is never put in the deal price field. idealo names shops as `MediaMarkt`,
+   `mediamarkt.de` or `philips.de (Home-appliances)`; a brand-owned domain such as
+   `home-appliances.philips` matches only when the label matches too, and a shared name alone
+   (`amazon.de` vs `amazon.com`) never does.
 3. **Photo.** Otherwise the shopper is asked to photograph the price.
 
 The page shows what was found and its source ("What we found"), then `/api/check` judges

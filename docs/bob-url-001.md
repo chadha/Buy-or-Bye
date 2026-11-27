@@ -1,6 +1,6 @@
 # BOB-URL-001: URL-to-Product Intelligence
 
-Status: M1, M2 and M3 done (27 Nov 2026); next M4. Priority: P0. Owner: product (chadha); implementation: Claude Code.
+Status: M1–M4 done (27 Nov 2026); next M5. Priority: P0. Owner: product (chadha); implementation: Claude Code.
 
 A shopper pastes a product URL. Buy or Bye validates it, extracts what the page and URL say
 about the product, identifies the exact product on idealo, compares market prices and price
@@ -73,6 +73,30 @@ Each stage: failing tests first, implementation, `make check` + `make demo`, loc
   `productRef`.
 - Every idealo call now goes through the daily budget (`app/idealo_usage.py`): a price check
   costs 3 calls, a details lookup 1 (cached per product for 24 h).
+
+## M4 results (verified live, 27 Nov 2026)
+`POST /api/v1/product-url/resolve` on the XC2011_01 URL: matched, confidence high, idealo
+product 203830913 "Philips XC2011/01".
+
+| Field | Value | Source | Status |
+|---|---|---|---|
+| model | XC2011/01 | URL path | verified by idealo's product name |
+| brand | Philips | idealo product name | verified by the shop's own domain (.philips) |
+| market | DE | URL path | verified by the idealo DE marketplace |
+| category | Stielstaubsauger | idealo details | unverified (one source) |
+| currency | EUR | idealo price ("89,30 €") | unverified (one source) |
+| name | Philips XC2011/01 | idealo | unverified |
+| family, GTIN, MPN | unknown | no approved source states them | — |
+
+Rules: "verified" needs two independent sources; one source is "unverified"; disagreement is
+"contradicted". Exact model + variant gives high confidence; model without variant medium;
+name only low ("uncertain", never a firm identity); another variant or model, a different
+page brand, or a single-shop listing is rejected; equally good different products are
+"ambiguous". A market mismatch makes the result "uncertain". Product details are fetched only
+when the category is unknown.
+
+Shop matching now understands idealo merchant names such as `philips.de (Home-appliances)`, so
+the link pre-fill finds the same-shop offer (€89.99 live).
 
 ## Example (test expectation, not a hard-coded rule)
 

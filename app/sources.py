@@ -20,9 +20,9 @@ from importlib import resources
 from typing import TYPE_CHECKING, Any, Literal, Protocol
 from urllib.parse import urlsplit
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
-from .models import Offer, PricePoint, ProductData, cents, to_decimal
+from .models import Money, Offer, PricePoint, ProductData, cents, to_decimal
 
 if TYPE_CHECKING:
     from .idealo_usage import Purpose, UsageTracker
@@ -188,6 +188,15 @@ class IdealoMCPSource:
             source="idealo",
         )
 
+    async def search(self, query: str, purpose: Purpose = "identity") -> list[SearchHit]:
+        """search_products as typed hits (identity resolution, BOB-URL-001 M4)."""
+        raw = (
+            await self._call_many(
+                [(self.tools["search"], {"query": query, "country": self.country})], purpose
+            )
+        )[0]
+        return hits_from_idealo(raw)
+
     def details_args(self, product_ref: str, item_type: str | None = None) -> dict[str, Any]:
         """Arguments exactly as the recorded tool schema defines them (docs/idealo-mcp.md)."""
         args: dict[str, Any] = {"productRef": product_ref, "country": self.country}
@@ -328,6 +337,61 @@ def details_from_idealo(raw: Any, retrieved_at: datetime) -> ProductDetails:
     if details.missing:
         details.status = "partial"
     return details
+
+
+_CURRENCY_SYMBOLS = {"€": "EUR", "£": "GBP"}
+_MAX_HITS = 20
+
+
+class SearchHit(BaseModel):
+    """One search_products result. `currency` is only what idealo's price string shows."""
+
+    product_ref: str
+    name: str
+    url: str | None = None
+    item_type: str | None = None
+    price: Money | None = None
+    currency: str | None = None
+    canonical_id: str | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _read(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+        out = dict(data)
+        out["name"] = _text(out.get("name")) or ""
+        price = out.get("price")
+        if isinstance(price, str):
+            out["currency"] = out.get("currency") or next(
+                (code for sym, code in _CURRENCY_SYMBOLS.items() if sym in price), None
+            )
+            out["price"] = parse_price(price)
+        out["canonical_id"] = out.get("canonical_id") or canonical_product_id(out.get("url"))
+        return out
+
+
+def hits_from_idealo(raw: Any) -> list[SearchHit]:
+    """search_products results -> SearchHit (results without a productRef or name dropped)."""
+    results = raw.get("results") if isinstance(raw, dict) else None
+    hits: list[SearchHit] = []
+    for r in results if isinstance(results, list) else []:
+        if not isinstance(r, dict) or not r.get("productRef") or not _text(r.get("name")):
+            continue
+        hits.append(
+            SearchHit.model_validate(
+                {
+                    "product_ref": str(r["productRef"]),
+                    "name": r.get("name"),
+                    "url": _text(r.get("url")),
+                    "item_type": _text(r.get("itemType")),
+                    "price": r.get("price") if isinstance(r.get("price"), str) else None,
+                }
+            )
+        )
+        if len(hits) >= _MAX_HITS:
+            break
+    return hits
 
 
 class DetailsCache:

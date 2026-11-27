@@ -76,6 +76,8 @@ class FieldValue(BaseModel):
     source: Source
     status: Status = "unverified"
     raw: str | None = None  # the text as found, when the value was normalised
+    # The independent source that confirmed ("verified") or disagreed ("contradicted").
+    corroborated_by: Source | None = None
 
 
 class ProductIdentity(BaseModel):

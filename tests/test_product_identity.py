@@ -292,6 +292,7 @@ def test_identify_endpoint(monkeypatch):
         "source": "url_path",
         "status": "unverified",
         "raw": "XC2011_01",
+        "corroborated_by": None,  # added in M4 (optional); identify never verifies
     }
     assert body["identity"]["brand"] is None
     assert body["page"]["fetched"] is True

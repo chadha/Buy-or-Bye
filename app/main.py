@@ -12,6 +12,7 @@ from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
 from .extract import Extracted, parse_photo, parse_text
+from .identity_resolution import Resolution, resolve_identity
 from .models import Deal, Verdict
 from .product_identity import UrlIdentityReport, UrlValidationError, identify_product_url
 from .shop_page import prices_for_link
@@ -80,6 +81,25 @@ async def identify_product(req: IdentifyRequest) -> UrlIdentityReport:
         return await identify_product_url(req.url, offline=source.name == "demo")
     except UrlValidationError as exc:
         raise HTTPException(422, {"code": exc.code, "message": exc.message}) from exc
+
+
+@app.post("/api/v1/product-url/resolve")
+async def resolve_product(req: IdentifyRequest) -> Resolution:
+    """BOB-URL-001 M4: identify the URL, then resolve it to one idealo product and verify the
+    identity fields. Demo mode stays offline and reports "unavailable"."""
+    offline = source.name == "demo" or not hasattr(source, "search")
+    try:
+        report = await identify_product_url(req.url, offline=offline)
+    except UrlValidationError as exc:
+        raise HTTPException(422, {"code": exc.code, "message": exc.message}) from exc
+    if offline:
+        return Resolution(
+            status="unavailable",
+            identity=report.identity,
+            identification=report,
+            reasons=["demo mode is offline: idealo was not searched"],
+        )
+    return await resolve_identity(report, source)  # type: ignore[arg-type]
 
 
 @app.post("/api/check")
