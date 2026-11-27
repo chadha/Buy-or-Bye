@@ -30,6 +30,31 @@ def test_english_deal_text_without_hint_uses_lower_as_price():
     assert (x.price, x.was_price) == (299.0, 399.0)
 
 
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Sony WH-1000XM5 279 € statt 419 €",
+        "Sony WH-1000XM5 €279 was €419",
+        "Sony WH-1000XM5 279,00€ UVP 419,00€",
+    ],
+)
+def test_digit_at_end_of_model_name_is_not_part_of_the_price(text):
+    x = parse_text(text)
+    assert (x.price, x.was_price) == (279.0, 419.0)
+    assert x.product == "Sony WH-1000XM5"
+
+
+def test_space_as_thousands_separator_still_works():
+    x = parse_text("Kestrel Laptop 14 Pro 1 049 € statt 1 199 €")
+    assert (x.price, x.was_price) == (1049.0, 1199.0)
+
+
+def test_link_asks_for_the_prices():
+    x = parse_text("https://www.amazon.de/dp/B09XS7JWHH")
+    assert (x.price, x.was_price) == (None, None)
+    assert "price" in x.note.lower()
+
+
 def test_link_gives_product_words_and_shop():
     x = parse_text("https://www.example-shop.de/produkt/nordwind-anc-headphones-h7-12345.html")
     assert x.shop == "example-shop"

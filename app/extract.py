@@ -15,7 +15,8 @@ from urllib.parse import unquote, urlsplit
 import httpx
 from pydantic import BaseModel
 
-PRICE = r"(\d{1,3}(?:[.\s]\d{3})*(?:,\d{1,2})?|\d+(?:[.,]\d{1,2})?)"
+# The lookbehind stops a model number's last digit ("XM5 279 €") from joining the price.
+PRICE = r"(?<![\w.,])(\d{1,3}(?:[.\s]\d{3})*(?:,\d{1,2})?|\d+(?:[.,]\d{1,2})?)"
 _PRICE_RE = re.compile(rf"(?:€\s*{PRICE}|{PRICE}\s*(?:€|eur\b|euro\b))", re.IGNORECASE)
 _WAS_HINT = re.compile(
     r"(statt|was|uvp|vorher|instead of|regular|bisher|rrp|compare at)\s*:?\s*$", re.IGNORECASE
@@ -60,7 +61,12 @@ def parse_text(text: str) -> Extracted:
             and w.lower() not in {"html", "dp", "p", "product", "produkt", "de", "en"}
         ]
         shop = parts.netloc.removeprefix("www.").split(".")[0] or None
-        return Extracted(product=" ".join(words)[:120] or None, shop=shop)
+        return Extracted(
+            product=" ".join(words)[:120] or None,
+            shop=shop,
+            note="We only read the product from a link. Please type the deal price "
+            "and the claimed 'was' price from the shop page.",
+        )
 
     prices: list[tuple[float, bool]] = []
     for m in _PRICE_RE.finditer(text):
