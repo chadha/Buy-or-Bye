@@ -249,6 +249,13 @@ repository.
   risk                                deletion
   -----------------------------------------------------------------------
 
+## Feature work: BOB-URL-001 (URL-to-Product Intelligence)
+
+In progress on the demo slice in `app/`. Decisions (Decimal money, additive versioned APIs,
+guarded idealo `get_product_details`), stages M1–M6 and acceptance criteria are in
+[`docs/bob-url-001.md`](docs/bob-url-001.md). Those stage names are scoped to the feature and
+are separate from the milestones above.
+
 ## 9. Immediate next action
 
 Start with M0 only. Inspect the existing Buy or Bye repository and

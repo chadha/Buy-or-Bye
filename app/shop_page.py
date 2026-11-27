@@ -252,13 +252,31 @@ def _from_json_ld(html: str) -> PagePrices:
     return best
 
 
-def _from_meta(html: str) -> PagePrices:
+def meta_map(html: str) -> dict[str, str]:
+    """<meta property|name|itemprop=... content=...> as {lower-case key: first content}."""
     meta: dict[str, str] = {}
     for tag in _META_RE.findall(html):
         attrs = {k.lower(): (a if a else b) for k, a, b in _ATTR_RE.findall(tag)}
         key = attrs.get("property") or attrs.get("name") or attrs.get("itemprop")
         if key and "content" in attrs:
             meta.setdefault(key.lower(), attrs["content"])
+    return meta
+
+
+def json_ld_products(html: str) -> Iterator[dict[str, Any]]:
+    """Every schema.org Product node in the page's JSON-LD blocks (broken blocks skipped)."""
+    for m in _LD_RE.finditer(html):
+        try:
+            data = json.loads(m.group(1).strip())
+        except ValueError:
+            continue
+        for node in _nodes(data):
+            if "Product" in _types(node):
+                yield node
+
+
+def _from_meta(html: str) -> PagePrices:
+    meta = meta_map(html)
     price, currency = None, ""
     for amount_key, currency_key in (
         ("product:price:amount", "product:price:currency"),

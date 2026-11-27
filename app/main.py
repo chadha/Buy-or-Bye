@@ -9,9 +9,11 @@ from importlib import resources
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse
+from pydantic import BaseModel, Field
 
 from .extract import Extracted, parse_photo, parse_text
 from .models import Deal, Verdict
+from .product_identity import UrlIdentityReport, UrlValidationError, identify_product_url
 from .shop_page import prices_for_link
 from .sources import PriceSource, SourceError, make_source
 from .verdict import decide
@@ -61,6 +63,23 @@ async def extract_photo(photo: UploadFile = PHOTO) -> Extracted:
     except Exception:  # noqa: BLE001 - surfaced to the user as "paste the link instead"
         log.exception("photo extraction failed")
         return Extracted(note="We couldn't read the photo. Try a sharper photo of the price tag.")
+
+
+class IdentifyRequest(BaseModel):
+    url: str = Field(max_length=4096)
+
+
+@app.post("/api/v1/product-url/identify")
+async def identify_product(req: IdentifyRequest) -> UrlIdentityReport:
+    """BOB-URL-001: validate a product URL and extract its identity, each field with a source.
+
+    Live mode reads the page's structured data; demo mode stays offline. An unusable URL
+    gives 422 with a stable `{"code", "message"}` detail.
+    """
+    try:
+        return await identify_product_url(req.url, offline=source.name == "demo")
+    except UrlValidationError as exc:
+        raise HTTPException(422, {"code": exc.code, "message": exc.message}) from exc
 
 
 @app.post("/api/check")
