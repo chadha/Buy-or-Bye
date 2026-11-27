@@ -35,7 +35,7 @@ async def healthz() -> dict[str, str]:
 
 @app.get("/", response_class=HTMLResponse)
 async def index() -> str:
-    return resources.files("app").joinpath("static/index.html").read_text()
+    return resources.files("app").joinpath("static/index.html").read_text(encoding="utf-8")
 
 
 @app.post("/api/extract/text")

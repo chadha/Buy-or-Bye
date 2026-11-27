@@ -2,7 +2,7 @@
   "mcpServers": {
     "idealo": {
       "type": "http",
-      "url": "${IDEALO_MCP_URL}"
+      "url": "${IDEALO_MCP_URL:-https://mcp.idealo.com/mcp}"
     }
   }
 }

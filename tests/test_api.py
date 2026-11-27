@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 from app import main
 from app.sources import DemoSource, IdealoMCPSource, SourceError
 
-DEALS = json.loads((Path(__file__).parent / "fixtures" / "deals.json").read_text())
+DEALS = json.loads((Path(__file__).parent / "fixtures" / "deals.json").read_text(encoding="utf-8"))
 client = TestClient(main.app)
 
 
