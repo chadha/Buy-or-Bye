@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 HTML = (Path(__file__).parents[1] / "app" / "static" / "index.html").read_text()
 
 
