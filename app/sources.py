@@ -110,13 +110,24 @@ class IdealoMCPSource:
         except ImportError as exc:  # pragma: no cover - optional dependency
             raise SourceError("install the idealo extra: pip install -e '.[idealo]'") from exc
         out: list[Any] = []
-        async with open_transport(transport, self.url) as streams:
-            session = ClientSession(streams[0], streams[1])
-            async with session:
-                await session.initialize()
-                for tool, args in calls:
-                    result = await session.call_tool(tool, args)
-                    out.append(_unwrap(tool, result))
+        try:
+            async with open_transport(transport, self.url) as streams:
+                session = ClientSession(streams[0], streams[1])
+                async with session:
+                    await session.initialize()
+                    for tool, args in calls:
+                        result = await session.call_tool(tool, args)
+                        out.append(_unwrap(tool, result))
+        except Exception as exc:  # noqa: BLE001 - every idealo failure is reported the same way
+            # The SDK wraps errors in ExceptionGroups (anyio task groups); surface the tool's
+            # own SourceError if there is one, otherwise one clear, actionable message.
+            inner = _first_source_error(exc)
+            if inner is not None:
+                raise inner from exc
+            raise SourceError(
+                "idealo is not answering. The sign-in may have expired: "
+                "run `make idealo-login` and try again."
+            ) from exc
         return out
 
     async def _call(self, tool: str, args: dict[str, Any]) -> Any:
@@ -140,6 +151,16 @@ class IdealoMCPSource:
             offers=offers_from_idealo(offers),
             source="idealo",
         )
+
+
+def _first_source_error(exc: BaseException) -> SourceError | None:
+    if isinstance(exc, SourceError):
+        return exc
+    for sub in getattr(exc, "exceptions", ()) or ():
+        found = _first_source_error(sub)
+        if found is not None:
+            return found
+    return None
 
 
 def _field(result: Any, *names: str) -> Any:

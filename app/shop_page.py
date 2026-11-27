@@ -335,6 +335,9 @@ async def prices_for_link(
         except SourceError as exc:
             log.info("idealo lookup failed for %s: %s", shop, exc)
             found = None
+        except Exception:  # noqa: BLE001 - a pre-fill must never break the form
+            log.exception("idealo lookup crashed for %s", shop)
+            found = None
         offer = next(
             (
                 o

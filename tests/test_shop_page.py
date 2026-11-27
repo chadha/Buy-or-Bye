@@ -374,6 +374,16 @@ async def test_page_error_still_tries_idealo_and_never_raises():
     assert x.price == 42.0
 
 
+async def test_unexpected_idealo_exception_falls_back_to_typing():
+    class Exploding(FakeSource):
+        async def find(self, query: str) -> ProductData | None:
+            raise ExceptionGroup("task group", [RuntimeError("HTTP 403")])
+
+    x = await prices_for_link("https://shop.example/p/kettle", Exploding(None), fetch=page_empty)
+    assert (x.price, x.was_price) == (None, None)
+    assert "type" in x.note.lower()
+
+
 async def test_idealo_error_falls_back_to_typing():
     class Broken(FakeSource):
         async def find(self, query: str) -> ProductData | None:
