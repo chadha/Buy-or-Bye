@@ -10,7 +10,7 @@ def test_extracted_values_replace_existing_form_values_and_clear_missing_ones():
 
 
 def test_extraction_explains_missing_required_fields_without_guessing():
-    assert 'Couldn't detect ' in HTML
+    assert "Couldn't detect " in HTML
     assert 'The claimed “was” price is optional.' in HTML
 
 
