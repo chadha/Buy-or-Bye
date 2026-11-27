@@ -11,10 +11,11 @@ import json
 import os
 import re
 from datetime import date
+from decimal import Decimal, InvalidOperation
 from importlib import resources
 from typing import Any, Protocol
 
-from .models import Offer, PricePoint, ProductData
+from .models import Offer, PricePoint, ProductData, cents, to_decimal
 
 
 class SourceError(RuntimeError):
@@ -52,10 +53,14 @@ class DemoSource:
         return best if best_score >= 0.6 else None
 
 
-def parse_price(text: Any) -> float | None:
-    """idealo formats prices as strings: "1.059,00 €" (DE/AT/FR/IT/ES) or "£999.99" (GB)."""
-    if isinstance(text, (int, float)):
-        return float(text)
+def parse_price(text: Any) -> Decimal | None:
+    """idealo formats prices as strings: "1.059,00 €" (DE/AT/FR/IT/ES) or "£999.99" (GB).
+    Returns exact cents (Decimal); numbers are read through to_decimal, never as binary floats."""
+    if isinstance(text, (int, float)) and not isinstance(text, bool):
+        try:
+            return cents(to_decimal(text))
+        except ValueError:
+            return None
     if not isinstance(text, str):
         return None
     raw = re.sub(r"[^0-9,.]", "", text)
@@ -70,8 +75,8 @@ def parse_price(text: Any) -> float | None:
     else:
         raw = re.sub(r"[.,]", "", raw)
     try:
-        return round(float(raw), 2)
-    except ValueError:
+        return cents(Decimal(raw))
+    except InvalidOperation:
         return None
 
 
@@ -203,7 +208,7 @@ def best_result(found: Any, query: str, min_match: float = 0.6) -> dict[str, Any
 def history_from_idealo(raw: Any) -> list[PricePoint]:
     """priceTrend.history -> one PricePoint per day (lowest price of that day), oldest first."""
     trend = (raw or {}).get("priceTrend") or {}
-    by_day: dict[date, float] = {}
+    by_day: dict[date, Decimal] = {}
     for h in trend.get("history") or []:
         price = parse_price(h.get("price"))
         iso = h.get("dateTimeISO")
@@ -219,7 +224,7 @@ def history_from_idealo(raw: Any) -> list[PricePoint]:
             continue
         # get_product_details reports cents as integers; the history tool reports strings.
         if isinstance(h.get("price"), int) and h["price"] > 1000 and price > 1000:
-            price = round(price / 100, 2)
+            price = cents(price / 100)
         by_day[day] = min(price, by_day.get(day, price))
     return [PricePoint(day=d, price=p) for d, p in sorted(by_day.items())]
 
@@ -241,9 +246,9 @@ def make_source() -> PriceSource:
     return IdealoMCPSource() if os.environ.get("PRICE_SOURCE") == "idealo" else DemoSource()
 
 
-def history_from_pairs(pairs: list[tuple[str, float]]) -> list[PricePoint]:
-    return [PricePoint(day=date.fromisoformat(d), price=p) for d, p in pairs]
+def history_from_pairs(pairs: list[tuple[str, Decimal | float]]) -> list[PricePoint]:
+    return [PricePoint.model_validate({"day": date.fromisoformat(d), "price": p}) for d, p in pairs]
 
 
-def offers_from_pairs(pairs: list[tuple[str, float]]) -> list[Offer]:
-    return [Offer(merchant=m, price=p) for m, p in pairs]
+def offers_from_pairs(pairs: list[tuple[str, Decimal | float]]) -> list[Offer]:
+    return [Offer.model_validate({"merchant": m, "price": p}) for m, p in pairs]

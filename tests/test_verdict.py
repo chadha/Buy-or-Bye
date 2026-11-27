@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import date, timedelta
+from decimal import Decimal
 
 import pytest
 
@@ -53,7 +54,7 @@ def test_pre_sale_hike_is_detected_and_not_counted_as_saving():
     assert v.label is Label.BYE
     assert "pre_sale_hike" in codes(v)
     assert v.stats["reference_price"] == 100  # compared against the pre-hike price
-    assert v.stats["real_saving"] == pytest.approx(0.02)
+    assert v.stats["real_saving"] == Decimal("0.02")
 
 
 def test_cheaper_at_another_shop_is_bye():

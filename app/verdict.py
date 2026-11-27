@@ -1,28 +1,45 @@
 """The verdict engine. Pure functions only: no network, no LLM, no clock (today is passed in).
 
-Every label is decided here, from idealo price history plus the numbers the shopper confirmed.
+Every label is decided here, from idealo price history plus the deal's own numbers.
 Every reason carries the numbers it used, so the UI and a judge can check them.
+All money and ratios are Decimal (BOB-URL-001 D1): no float arithmetic on prices.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, timedelta
+from decimal import ROUND_HALF_UP, Decimal
 from statistics import median
 
-from .models import Deal, Evidence, Label, Offer, PricePoint, ProductData, Reason, Verdict
+from .models import (
+    Deal,
+    Evidence,
+    Label,
+    Offer,
+    PricePoint,
+    ProductData,
+    Reason,
+    Verdict,
+    cents,
+)
+
+RATIO_PLACES = Decimal("0.0001")
 
 
 @dataclass(frozen=True)
 class Thresholds:
     min_points_30d: int = 10  # fewer daily prices than this in 30 days -> not enough data
-    buy_min_saving: float = 0.10  # >= 10% below the typical (median) 30-day price
-    near_low_tolerance: float = 0.03  # within 3% of the 90-day low counts as "at the low"
-    above_low_tolerance: float = 0.03  # > 3% above the 30-day low means it was cheaper recently
-    cheaper_elsewhere: float = 0.05  # another shop >= 5% cheaper right now
-    fake_ratio: float = 3.0  # claimed discount >= 3x the real one ...
-    fake_min_claim: float = 0.20  # ... and the claim is at least 20%
-    hike_ratio: float = 1.10  # pre-sale max >= 10% above the earlier typical price
+    buy_min_saving: Decimal = Decimal("0.10")  # >= 10% below the typical (median) 30-day price
+    near_low_tolerance: Decimal = Decimal("0.03")  # within 3% of the 90-day low = "at the low"
+    above_low_tolerance: Decimal = Decimal("0.03")  # > 3% above the 30-day low: cheaper recently
+    cheaper_elsewhere: Decimal = Decimal("0.05")  # another shop >= 5% cheaper right now
+    fake_ratio: Decimal = Decimal("3.0")  # claimed discount >= 3x the real one ...
+    fake_min_claim: Decimal = Decimal("0.20")  # ... and the claim is at least 20%
+    claim_saving_floor: Decimal = Decimal("0.01")  # real saving counted as >= 1% in that ratio
+    hike_ratio: Decimal = Decimal("1.10")  # pre-sale max >= 10% above the earlier typical price
+    hike_max_saving: Decimal = Decimal("0.05")  # after a hike, < 5% real saving is a BYE
+    was_never_needed_margin: Decimal = Decimal("1.05")  # "was" > 5% above the 90-day max
 
 
 DEFAULT = Thresholds()
@@ -30,12 +47,12 @@ DEFAULT = Thresholds()
 
 @dataclass(frozen=True)
 class Stats:
-    low_30: float
-    median_30: float
-    low_90: float
-    max_90: float
-    baseline_before_sale: float | None  # typical price 22..60 days ago
-    peak_last_21: float | None  # highest daily low in the last 21 days
+    low_30: Decimal
+    median_30: Decimal
+    low_90: Decimal
+    max_90: Decimal
+    baseline_before_sale: Decimal | None  # typical price 22..60 days ago
+    peak_last_21: Decimal | None  # highest daily low in the last 21 days
     points_30: int
     window_30: str
     window_90: str
@@ -43,7 +60,7 @@ class Stats:
     baseline_days: str = "22–60"
 
 
-def _window(points: list[PricePoint], today: date, start_days: int, end_days: int) -> list[float]:
+def _window(points: list[PricePoint], today: date, start_days: int, end_days: int) -> list[Decimal]:
     start, end = today - timedelta(days=start_days), today - timedelta(days=end_days)
     return [p.price for p in points if start <= p.day <= end]
 
@@ -78,12 +95,13 @@ def compute_stats(history: list[PricePoint], today: date) -> Stats | None:
     )
 
 
-def _pct(x: float) -> str:
-    return f"{x * 100:.0f}%"
+def _pct(x: Decimal) -> str:
+    # Whole percent, half up like money (an exact 37.5% shows as 38%).
+    return f"{(x * 100).quantize(Decimal(1), rounding=ROUND_HALF_UP)}%"
 
 
-def _eur(x: float) -> str:
-    return f"€{x:,.2f}"
+def _eur(x: Decimal) -> str:
+    return f"€{cents(x):,.2f}"
 
 
 def _cheapest_other(offers: list[Offer], shop: str | None) -> Offer | None:
@@ -134,23 +152,23 @@ def decide(
     ev_typ = (
         Evidence(
             metric=f"median daily lowest price, {s.baseline_days} days ago",
-            value=round(ref, 2),
+            value=cents(ref),
             source=src,
         )
         if ref != s.median_30
         else Evidence(
             metric="median daily lowest price, 30 days",
-            value=round(s.median_30, 2),
+            value=cents(s.median_30),
             window=s.window_30,
             source=src,
         )
     )
     ev_low30 = Evidence(
-        metric="lowest price, 30 days", value=round(s.low_30, 2), window=s.window_30, source=src
+        metric="lowest price, 30 days", value=cents(s.low_30), window=s.window_30, source=src
     )
     ev_low90 = Evidence(
         metric=f"lowest price, {s.long_days} days",
-        value=round(s.low_90, 2),
+        value=cents(s.low_90),
         window=s.window_90,
         source=src,
     )
@@ -217,22 +235,24 @@ def decide(
         ev_was = Evidence(metric="claimed 'was' price", value=deal.was_price, source="user")
         ev_max = Evidence(
             metric=f"highest daily lowest price, {s.long_days} days",
-            value=round(s.max_90, 2),
+            value=cents(s.max_90),
             window=s.window_90,
             source=src,
         )
-        if claimed >= t.fake_min_claim and claimed >= t.fake_ratio * max(real_saving, 0.01):
+        if claimed >= t.fake_min_claim and claimed >= t.fake_ratio * max(
+            real_saving, t.claim_saving_floor
+        ):
             fake = True
             reasons.append(
                 Reason(
                     code="inflated_claim",
                     polarity="against",
                     text=f"Claimed −{_pct(claimed)}, but the real saving is "
-                    f"{_pct(max(real_saving, 0))} against {ref_label}.",
+                    f"{_pct(max(real_saving, Decimal(0)))} against {ref_label}.",
                     evidence=[ev_was, ev_price, ev_typ],
                 )
             )
-        if deal.was_price > s.max_90 * 1.05:
+        if deal.was_price > s.max_90 * t.was_never_needed_margin:
             reasons.append(
                 Reason(
                     code="was_price_never_needed",
@@ -256,12 +276,12 @@ def decide(
                 evidence=[
                     Evidence(
                         metric=f"typical price {s.baseline_days} days ago",
-                        value=round(s.baseline_before_sale, 2),
+                        value=cents(s.baseline_before_sale),
                         source=src,
                     ),
                     Evidence(
                         metric="highest daily lowest price, 21 days",
-                        value=round(s.peak_last_21, 2),
+                        value=cents(s.peak_last_21),
                         source=src,
                     ),
                 ],
@@ -289,7 +309,7 @@ def decide(
     if (
         fake
         or cheaper_now
-        or (hike and real_saving < 0.05)
+        or (hike and real_saving < t.hike_max_saving)
         or real_saving <= 0
         or (above_recent_low and not at_90_low)
     ):
@@ -309,11 +329,11 @@ def decide(
         product=product,
         deal=deal,
         stats={
-            "median_30": round(s.median_30, 2),
-            "low_30": round(s.low_30, 2),
-            "low_90": round(s.low_90, 2),
-            "max_90": round(s.max_90, 2),
-            "reference_price": round(ref, 2),
-            "real_saving": round(real_saving, 4),
+            "median_30": cents(s.median_30),
+            "low_30": cents(s.low_30),
+            "low_90": cents(s.low_90),
+            "max_90": cents(s.max_90),
+            "reference_price": cents(ref),
+            "real_saving": real_saving.quantize(RATIO_PLACES, rounding=ROUND_HALF_UP),
         },
     )

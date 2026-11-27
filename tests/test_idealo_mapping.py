@@ -2,6 +2,7 @@
 github.com/idealo/mcp-server-guide docs/tools.md (illustrative samples, not live recordings)."""
 
 from datetime import date, timedelta
+from decimal import Decimal
 
 from app.mcp_server import judge
 from app.sources import best_result, history_from_idealo, offers_from_idealo, parse_price
@@ -63,7 +64,7 @@ OFFERS = {
 def test_parse_price_formats() -> None:
     assert parse_price("1.059,00 €") == 1059.0
     assert parse_price("999,00 €") == 999.0
-    assert parse_price("£999.99") == 999.99
+    assert parse_price("£999.99") == Decimal("999.99")
     assert parse_price("£1,299.00") == 1299.0
     assert parse_price("") is None
     assert parse_price(None) is None

@@ -22,6 +22,7 @@ import re
 import socket
 import urllib.robotparser
 from collections.abc import Awaitable, Callable, Iterator
+from decimal import Decimal
 from typing import Any
 from urllib.parse import urljoin, urlsplit
 
@@ -29,6 +30,7 @@ import httpx
 from pydantic import BaseModel
 
 from .extract import Extracted, parse_text
+from .models import Money, cents
 from .sources import PriceSource, SourceError, parse_price
 
 log = logging.getLogger("buy_or_bye.shop_page")
@@ -50,8 +52,8 @@ class PageFetchError(RuntimeError):
 
 class PagePrices(BaseModel):
     name: str | None = None
-    price: float | None = None
-    was_price: float | None = None
+    price: Money | None = None
+    was_price: Money | None = None
 
 
 # --- URL safety --------------------------------------------------------------------------------
@@ -170,17 +172,18 @@ _META_RE = re.compile(r"<meta\b[^>]*>", re.I)
 _ATTR_RE = re.compile(r"([a-zA-Z:-]+)\s*=\s*(?:\"([^\"]*)\"|'([^']*)')")
 
 
-def _num(value: Any) -> float | None:
+def _num(value: Any) -> Decimal | None:
     if isinstance(value, bool):
         return None
+    out: Decimal | None
     if isinstance(value, (int, float)):
-        out: float | None = float(value)
+        out = parse_price(value)
     elif isinstance(value, str):
         s = value.strip()
-        out = float(s) if re.fullmatch(r"\d+(\.\d+)?", s) else parse_price(s)
+        out = cents(Decimal(s)) if re.fullmatch(r"\d+(\.\d+)?", s) else parse_price(s)
     else:
         return None
-    return round(out, 2) if out is not None and 0 < out < 100_000 else None
+    return out if out is not None and 0 < out < 100_000 else None
 
 
 def _types(node: dict[str, Any]) -> list[str]:
@@ -217,7 +220,7 @@ def _strikethrough(spec: dict[str, Any]) -> bool:
     return any(k in kind for k in ("strikethrough", "listprice", "srp", "msrp"))
 
 
-def _offer_prices(offer: dict[str, Any]) -> tuple[float | None, float | None]:
+def _offer_prices(offer: dict[str, Any]) -> tuple[Decimal | None, Decimal | None]:
     specs = [s for s in _as_list(offer.get("priceSpecification")) if isinstance(s, dict)]
     if not _is_eur(offer, *specs):
         return None, None

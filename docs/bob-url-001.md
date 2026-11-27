@@ -1,6 +1,6 @@
 # BOB-URL-001: URL-to-Product Intelligence
 
-Status: M1 done (27 Nov 2026); next M2. Priority: P0. Owner: product (chadha); implementation: Claude Code.
+Status: M1 and M2 done (27 Nov 2026); next M3. Priority: P0. Owner: product (chadha); implementation: Claude Code.
 
 A shopper pastes a product URL. Buy or Bye validates it, extracts what the page and URL say
 about the product, identifies the exact product on idealo, compares market prices and price
@@ -25,6 +25,15 @@ milestones M0–M7 in `IMPLEMENTATION_PLAN.md`.
 - Keep existing API compatibility where possible: JSON keeps numeric values (no strings).
 - Regression tests freeze the current verdict outputs before the migration.
 - JSON serialisation is tested explicitly.
+
+Implemented in M2: `Money` (`app/models.py`) is `Decimal` quantised to cents, half up; floats
+are read through their shortest repr ("79.99"), never their binary value; NaN, infinity and
+booleans are refused. In JSON it is still a plain number (`279.0`), so clients see the same
+shapes. Ratios and stats use `Number` (Decimal, numeric in JSON). Percentages in reason texts
+round half up, like money. The golden set (505 cases, `tests/fixtures/golden_verdicts.json`,
+frozen from the float code) matches exactly except two documented float defects, both proven
+by tests and neither changing a label: a half-cent median (Kestrel €1,093.955 now €1,093.96,
+not €1,093.95) and an exact 37.5% claimed discount (now "−38%", not "−37%").
 
 ### D2: API contracts (conditionally approved)
 - `/api/extract/*` and `/api/check` keep their current request and response behaviour.

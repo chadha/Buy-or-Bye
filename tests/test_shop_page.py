@@ -4,6 +4,7 @@ No test touches the network: pages are served by httpx.MockTransport and DNS is 
 """
 
 import json
+from decimal import Decimal
 
 import httpx
 import pytest
@@ -42,7 +43,11 @@ def test_json_ld_product_with_offer():
             }
         )
     )
-    assert (page.name, page.price, page.was_price) == ("Philips Airfryer HD9285/90", 199.99, None)
+    assert (page.name, page.price, page.was_price) == (
+        "Philips Airfryer HD9285/90",
+        Decimal("199.99"),
+        None,
+    )
 
 
 def test_json_ld_strikethrough_price_is_the_was_price():
@@ -90,7 +95,7 @@ def test_json_ld_in_graph_with_offer_list_takes_the_lowest_eur_offer():
             }
         )
     )
-    assert page.price == 39.90
+    assert page.price == Decimal("39.90")
 
 
 def test_aggregate_offer_uses_low_price():
@@ -135,7 +140,7 @@ def test_meta_tags_are_a_fallback():
         '<meta property="og:title" content="Blender 900">'
     )
     page = prices_from_html(html)
-    assert (page.name, page.price) == ("Blender 900", 89.99)
+    assert (page.name, page.price) == ("Blender 900", Decimal("89.99"))
 
 
 def test_non_euro_prices_are_ignored():
@@ -333,7 +338,7 @@ async def test_link_prices_come_from_the_shop_page_first():
     )
     assert (x.product, x.price, x.shop) == (
         "Philips Airfryer HD9285/90",
-        199.99,
+        Decimal("199.99"),
         "home-appliances.philips",
     )
     assert "shop page" in x.note

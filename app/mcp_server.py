@@ -21,6 +21,13 @@ from .sources import SourceError, history_from_idealo, make_source, offers_from_
 from .verdict import decide
 
 
+def _deal(product: str, deal_price: float, was_price: float | None, shop: str | None) -> Deal:
+    # Tool arguments arrive as JSON numbers; Deal validation turns them into exact Decimal cents.
+    return Deal.model_validate(
+        {"product": product, "price": deal_price, "was_price": was_price, "shop": shop}
+    )
+
+
 def _summary(v: Verdict) -> dict[str, Any]:
     return {
         "label": v.label.value,
@@ -29,7 +36,7 @@ def _summary(v: Verdict) -> dict[str, Any]:
             {
                 "polarity": r.polarity,
                 "text": r.text,
-                "evidence": [e.model_dump(exclude_none=True) for e in r.evidence],
+                "evidence": [e.model_dump(mode="json", exclude_none=True) for e in r.evidence],
             }
             for r in v.reasons
         ],
@@ -49,7 +56,7 @@ def judge(
     offers: Any,
     today: date | None = None,
 ) -> dict[str, Any]:
-    deal = Deal(product=product, price=deal_price, was_price=was_price, shop=shop)
+    deal = _deal(product, deal_price, was_price, shop)
     data = ProductData(
         product_id=product,
         name=product,
@@ -87,7 +94,7 @@ def build_server() -> Any:
             found = await src.find(product)
         except SourceError as exc:
             return {"label": "ERROR", "headline": str(exc)}
-        deal = Deal(product=product, price=deal_price, was_price=was_price, shop=shop)
+        deal = _deal(product, deal_price, was_price, shop)
         last = found.history[-1].day if found and found.history else None
         from .main import _today_for
 

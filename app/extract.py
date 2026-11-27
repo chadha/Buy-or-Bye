@@ -10,10 +10,13 @@ import base64
 import json
 import os
 import re
+from decimal import Decimal, InvalidOperation
 from urllib.parse import unquote, urlsplit
 
 import httpx
 from pydantic import BaseModel
+
+from .models import Money, to_decimal
 
 # The lookbehind stops a model number's last digit ("XM5 279 €") from joining the price.
 PRICE = r"(?<![\w.,])(\d{1,3}(?:[.\s]\d{3})*(?:,\d{1,2})?|\d+(?:[.,]\d{1,2})?)"
@@ -25,13 +28,13 @@ _WAS_HINT = re.compile(
 
 class Extracted(BaseModel):
     product: str | None = None
-    price: float | None = None
-    was_price: float | None = None
+    price: Money | None = None
+    was_price: Money | None = None
     shop: str | None = None
     note: str = "Please check these fields before we judge the deal."
 
 
-def to_number(raw: str) -> float | None:
+def to_number(raw: str) -> Decimal | None:
     s = raw.strip().replace(" ", "")
     if "," in s and "." in s:  # 1.299,00 -> 1299.00
         s = s.replace(".", "").replace(",", ".")
@@ -40,10 +43,10 @@ def to_number(raw: str) -> float | None:
     elif re.fullmatch(r"\d{1,3}(\.\d{3})+", s):  # 1.299 -> 1299
         s = s.replace(".", "")
     try:
-        value = float(s)
-    except ValueError:
+        value = Decimal(s)
+    except InvalidOperation:
         return None
-    return value if 0 < value < 100_000 else None
+    return value if value.is_finite() and 0 < value < 100_000 else None
 
 
 def parse_text(text: str) -> Extracted:
@@ -69,7 +72,7 @@ def parse_text(text: str) -> Extracted:
             "to check the deal.",
         )
 
-    prices: list[tuple[float, bool]] = []
+    prices: list[tuple[Decimal, bool]] = []
     for m in _PRICE_RE.finditer(text):
         value = to_number(m.group(1) or m.group(2))
         if value is not None:
@@ -137,9 +140,15 @@ async def parse_photo(image: bytes, mime: str) -> Extracted:
     match = re.search(r"\{.*\}", content, re.DOTALL)
     raw = json.loads(match.group(0) if match else "{}")
 
-    def num(v: object) -> float | None:
+    def num(v: object) -> Decimal | None:
+        if isinstance(v, bool):
+            return None
         if isinstance(v, int | float):
-            return float(v) if 0 < v < 100_000 else None
+            try:
+                d = to_decimal(v)
+            except ValueError:
+                return None
+            return d if 0 < d < 100_000 else None
         return to_number(str(v)) if v else None
 
     return Extracted(
