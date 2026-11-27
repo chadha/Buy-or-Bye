@@ -108,12 +108,13 @@ flowchart LR
 ```bash
 pip install -e ".[dev,idealo]"
 make dev                                 # http://localhost:8000 on labelled demo data
-make check                               # ruff + mypy + pytest (44 tests)
+make check                               # ruff + mypy + pytest (777 tests)
 make demo                                # 5 demo deals with expected labels
 
 make idealo-login Q="sony wh-1000xm5"    # one-time idealo sign-in (OAuth)
 make live                                # the app on live idealo data
 ```
+In live mode a pasted product link goes through `POST /api/v1/product-url/check`: product identity with its sources, the idealo match, price provenance ("last seen by idealo … ago"), every current offer, and the verdict. See [`docs/bob-url-001.md`](docs/bob-url-001.md). idealo calls are capped per day (`IDEALO_DAILY_LIMIT`, max 500). Mapping and limits: [`docs/idealo-mcp.md`](docs/idealo-mcp.md).
 
 **In Claude Desktop:** add to `claude_desktop_config.json`:
 ```json
@@ -144,7 +145,7 @@ make live                                # the app on live idealo data
 
 ## 7. Status and roadmap
 
-**Working today:** web app (text, link, photo → confirm → verdict), verdict engine with 44 tests, idealo adapter mapped from idealo's published tool reference, Buy or Bye MCP server (tested over stdio).
+**Working today:** web app (text, link, photo → confirm → verdict), live link check with identity and price provenance, 777 automated tests, idealo adapter mapped from idealo's published tool reference, Buy or Bye MCP server (tested over stdio).
 **Honest limits:** idealo history covers 30 days; demo screens use fictional, labelled products; B2B is designed, not built.
 
 **Next:** B2B campaign check (CSV → OK / RISK + corrected reference price) · price alerts · flyer scan (many deals from one photo) · move into the production architecture in [`ARCHITECTURE.md`](ARCHITECTURE.md) following the milestones in [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md) (guardrails: [`GUARDRAILS.md`](GUARDRAILS.md), evaluation: [`EVALUATION.md`](EVALUATION.md)).
