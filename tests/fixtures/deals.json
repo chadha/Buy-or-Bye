@@ -1,0 +1,37 @@
+[
+  {
+    "product": "Nordwind ANC Headphones H7",
+    "price": 209.0,
+    "was_price": 279.0,
+    "shop": "Shop A",
+    "expect": "BUY"
+  },
+  {
+    "product": "Polar Air Fryer XL 6L",
+    "price": 79.99,
+    "was_price": 249.99,
+    "shop": "Shop D",
+    "expect": "BYE"
+  },
+  {
+    "product": "Lumen 4K Monitor 27Q",
+    "price": 299.0,
+    "was_price": 399.0,
+    "shop": "MegaShop",
+    "expect": "BYE"
+  },
+  {
+    "product": "Kestrel Laptop 14 Pro",
+    "price": 1049.0,
+    "was_price": 1199.0,
+    "shop": "Shop G",
+    "expect": "WAIT"
+  },
+  {
+    "product": "Vela Smartwatch S3",
+    "price": 179.0,
+    "was_price": 249.0,
+    "shop": "Shop I",
+    "expect": "NOT_ENOUGH_DATA"
+  }
+]

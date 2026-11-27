@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14171c">
+<title>Buy or Bye: is this deal real?</title>
+<style>
+  :root {
+    --bg: #f5f3ee; --card: #ffffff; --ink: #17191d; --muted: #5b6068; --line: #e2ded4;
+    --buy: #11683f; --buy-bg: #e3f3e8; --bye: #b3261e; --bye-bg: #fbe9e7;
+    --wait: #8a5a00; --wait-bg: #fdf1d8; --none: #4b5058; --none-bg: #eceae5; --accent: #1f4fd1;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#121417; --card:#1b1e22; --ink:#eceae5; --muted:#a3a8b0; --line:#2c3036;
+            --buy:#5fd197; --buy-bg:#143222; --bye:#ff8a80; --bye-bg:#3a1714;
+            --wait:#f3c262; --wait-bg:#36290b; --none:#c2c6cc; --none-bg:#25282d; --accent:#8fb0ff; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 640px; margin: 0 auto; padding: 20px 16px 48px; }
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  h1 { font-size: 28px; margin: 0; letter-spacing: -0.02em; }
+  .tag { color: var(--muted); margin: 4px 0 18px; }
+  .badge { font-size: 12px; padding: 3px 8px; border-radius: 99px; background: var(--none-bg);
+           color: var(--none); white-space: nowrap; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+          padding: 16px; margin-bottom: 14px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
+  input, textarea { width: 100%; font: inherit; color: var(--ink); background: var(--bg);
+                    border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+  textarea { min-height: 72px; resize: vertical; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .actions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+  button, .btn { font: inherit; font-weight: 600; border: 0; border-radius: 10px; padding: 11px 16px;
+                 cursor: pointer; background: var(--ink); color: var(--bg); }
+  .ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .chip { font-size: 13px; padding: 6px 10px; border-radius: 99px; border: 1px solid var(--line);
+          background: transparent; color: var(--ink); font-weight: 500; }
+  .note { font-size: 13px; color: var(--muted); margin-top: 8px; }
+  .verdict { display: flex; align-items: center; gap: 14px; }
+  .label { font-size: 30px; font-weight: 800; padding: 6px 16px; border-radius: 12px; }
+  .BUY { background: var(--buy-bg); color: var(--buy); }
+  .BYE { background: var(--bye-bg); color: var(--bye); }
+  .WAIT { background: var(--wait-bg); color: var(--wait); }
+  .NOT_ENOUGH_DATA { background: var(--none-bg); color: var(--none); font-size: 18px; }
+  .headline { font-weight: 600; }
+  svg { width: 100%; height: auto; display: block; margin: 12px 0 4px; }
+  .legend { font-size: 12px; color: var(--muted); display: flex; gap: 14px; flex-wrap: wrap; }
+  ul.reasons { list-style: none; padding: 0; margin: 12px 0 0; }
+  ul.reasons li { padding: 10px 0; border-top: 1px solid var(--line); }
+  .pol { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+         margin-right: 6px; }
+  .pol.for { color: var(--buy); } .pol.against { color: var(--bye); } .pol.neutral { color: var(--muted); }
+  .ev { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+  .hidden { display: none; }
+  .err { color: var(--bye); font-weight: 600; }
+</style>
+</head>
+<body>
+<main>
+  <header><h1>Buy or Bye</h1><span class="badge" id="src">…</span></header>
+  <p class="tag">Is this Black Friday deal real? We check the discount against idealo price history.</p>
+
+  <section class="card">
+    <label for="free">Paste a link or type the deal</label>
+    <textarea id="free" placeholder="e.g. Polar Air Fryer XL 6L 79,99 € statt 249,99 €"></textarea>
+    <div class="actions">
+      <button class="ghost" id="read">Read it</button>
+      <label class="btn ghost" style="margin:0">Take a photo
+        <input id="photo" type="file" accept="image/*" capture="environment" class="hidden">
+      </label>
+    </div>
+    <div class="chips" id="demos"></div>
+  </section>
+
+  <form class="card" id="deal">
+    <label for="product">Product</label>
+    <input id="product" required minlength="2" placeholder="Brand and model">
+    <div class="row">
+      <div><label for="price">Deal price (€)</label><input id="price" required inputmode="decimal"></div>
+      <div><label for="was">Claimed “was” price (€)</label><input id="was" inputmode="decimal"></div>
+    </div>
+    <label for="shop">Shop (optional)</label>
+    <input id="shop">
+    <p class="note" id="hint">Check these details, then judge the deal.</p>
+    <div class="actions"><button type="submit">Check deal</button></div>
+  </form>
+
+  <section class="card hidden" id="out" aria-live="polite"></section>
+</main>
+<script>
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g,
+  (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const num = (s) => { if (!s) return null; s = String(s).trim().replace(/\s/g, "");
+  if (s.includes(",") && s.includes(".")) s = s.replace(/\./g, "").replace(",", ".");
+  else s = s.replace(",", "."); const v = parseFloat(s); return isFinite(v) && v > 0 ? v : null; };
+const eur = (v) => "€" + Number(v).toLocaleString("en", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const NAMES = {BUY: "BUY", BYE: "BYE", WAIT: "WAIT", NOT_ENOUGH_DATA: "Not enough data"};
+
+function fill(x) {
+  if (x.product) $("#product").value = x.product;
+  if (x.price) $("#price").value = x.price;
+  $("#was").value = x.was_price ?? "";
+  $("#shop").value = x.shop ?? "";
+  $("#hint").textContent = x.note || "Check these details, then judge the deal.";
+}
+
+fetch("/healthz").then(r => r.json()).then(h => {
+  $("#src").textContent = h.source === "idealo" ? "Live idealo data" : "Demo data (fictional products)";
+  if (h.source !== "demo") return;
+  const demos = [
+    ["Headphones", {product:"Nordwind ANC Headphones H7", price:209, was_price:279, shop:"Shop A"}],
+    ["Air fryer −68%", {product:"Polar Air Fryer XL 6L", price:79.99, was_price:249.99, shop:"Shop D"}],
+    ["Monitor", {product:"Lumen 4K Monitor 27Q", price:299, was_price:399, shop:"MegaShop"}],
+    ["Laptop", {product:"Kestrel Laptop 14 Pro", price:1049, was_price:1199, shop:"Shop G"}],
+  ];
+  for (const [name, d] of demos) {
+    const b = document.createElement("button"); b.className = "chip"; b.type = "button";
+    b.textContent = name; b.onclick = () => { fill(d); $("#deal").requestSubmit(); };
+    $("#demos").appendChild(b);
+  }
+});
+
+$("#read").onclick = async () => {
+  const r = await fetch("/api/extract/text", {method: "POST", headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({text: $("#free").value})});
+  fill(await r.json());
+};
+
+$("#photo").onchange = async (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  $("#hint").textContent = "Reading the photo…";
+  const fd = new FormData(); fd.append("photo", f);
+  const r = await fetch("/api/extract/photo", {method: "POST", body: fd});
+  fill(r.ok ? await r.json() : {note: "We couldn't read the photo. Please type the details."});
+};
+
+function chart(v) {
+  const p = v.product; if (!p || !p.history.length) return "";
+  const pts = p.history.slice(-90); const W = 600, H = 260, L = 60, R = 12, T = 28, B = 36;
+  const vals = pts.map(x => x.price).concat([v.deal.price, v.stats.reference_price || v.deal.price]);
+  let lo = Math.min(...vals), hi = Math.max(...vals); const pad = (hi - lo) * 0.12 || 5; lo -= pad; hi += pad;
+  const X = (i) => L + i * (W - L - R) / (pts.length);
+  const Y = (y) => T + (hi - y) * (H - T - B) / (hi - lo);
+  const line = pts.map((x, i) => `${i ? "L" : "M"}${X(i).toFixed(1)} ${Y(x.price).toFixed(1)}`).join(" ");
+  const ref = v.stats.reference_price;
+  const ticks = [lo + pad, (lo + hi) / 2, hi - pad].map(t =>
+    `<text x="${L - 6}" y="${Y(t) + 4}" text-anchor="end" font-size="17" fill="currentColor" opacity=".6">${Math.round(t)}</text>`).join("");
+  const wasNote = v.deal.was_price ? `<text x="${W - R}" y="${T + 2}" text-anchor="end" font-size="18" fill="var(--bye)">Claimed “was”: ${esc(eur(v.deal.was_price))}${v.deal.was_price > hi ? " (off the chart)" : ""}</text>` : "";
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Lowest idealo price over the last ${pts.length} days, with the deal price marked">
+    ${ticks}
+    <path d="${line}" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    ${ref ? `<line x1="${L}" x2="${W - R}" y1="${Y(ref)}" y2="${Y(ref)}" stroke="currentColor" stroke-dasharray="5 5" opacity=".5"/>` : ""}
+    <circle cx="${X(pts.length)}" cy="${Y(v.deal.price)}" r="6" fill="var(--ink)"/>
+    ${v.deal.was_price && v.deal.was_price <= hi ? `<line x1="${L}" x2="${W - R}" y1="${Y(v.deal.was_price)}" y2="${Y(v.deal.was_price)}" stroke="var(--bye)" stroke-dasharray="2 4"/>` : ""}
+    ${wasNote}
+    <text x="${L}" y="${H - 6}" font-size="17" fill="currentColor" opacity=".6">${esc(pts[0].day)}</text>
+    <text x="${W - R}" y="${H - 6}" text-anchor="end" font-size="17" fill="currentColor" opacity=".6">today</text>
+  </svg>
+  <div class="legend"><span>— lowest idealo price per day</span><span>- - reference price ${ref ? esc(eur(ref)) : ""}</span><span>● deal ${esc(eur(v.deal.price))}</span></div>`;
+}
+
+function render(v) {
+  const src = v.product?.source === "idealo" ? "idealo" : "demo data";
+  const reasons = v.reasons.map(r => `<li><span class="pol ${r.polarity}">${r.polarity === "for" ? "In favour" : r.polarity === "against" ? "Against" : "Note"}</span>${esc(r.text)}
+      <div class="ev">${r.evidence.map(e => `${esc(e.metric)}: ${typeof e.value === "number" ? esc(eur(e.value)) : esc(e.value)}${e.window ? " (" + esc(e.window) + ")" : ""} · ${esc(e.source === "user" ? "you" : e.source)}`).join(" · ")}</div></li>`).join("");
+  $("#out").innerHTML = `
+    <div class="verdict"><span class="label ${v.label}">${NAMES[v.label]}</span>
+      <div><div class="headline">${esc(v.headline)}</div>
+      <div class="note">${esc(v.product ? v.product.name : v.deal.product)} · source: ${esc(src)}</div></div></div>
+    ${chart(v)}
+    <ul class="reasons">${reasons}</ul>`;
+  $("#out").classList.remove("hidden");
+  $("#out").scrollIntoView({behavior: "smooth", block: "start"});
+}
+
+$("#deal").onsubmit = async (e) => {
+  e.preventDefault();
+  const body = {product: $("#product").value.trim(), price: num($("#price").value),
+                was_price: num($("#was").value), shop: $("#shop").value.trim() || null};
+  if (!body.price) { $("#hint").textContent = "Please enter the deal price."; return; }
+  $("#out").classList.remove("hidden"); $("#out").innerHTML = `<p class="note">Checking price history…</p>`;
+  const r = await fetch("/api/check", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
+  if (!r.ok) { const err = await r.json().catch(() => ({})); $("#out").innerHTML = `<p class="err">${esc(err.detail || "Something went wrong.")}</p>`; return; }
+  render(await r.json());
+};
+// Shareable links: /?product=...&price=...&was=...&shop=... fills the form and checks it.
+const qs = new URLSearchParams(location.search);
+if (qs.get("product") && qs.get("price")) {
+  fill({product: qs.get("product"), price: qs.get("price"), was_price: qs.get("was"), shop: qs.get("shop")});
+  $("#deal").requestSubmit();
+}
+</script>
+</body>
+</html>
