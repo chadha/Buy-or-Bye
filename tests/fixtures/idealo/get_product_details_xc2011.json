@@ -1,0 +1,122 @@
+{
+ "_note": "Recorded live 2026-11-27 from mcp.idealo.com get_product_details (Philips XC2011/01, DE), trimmed to identity fields.",
+ "productRef": "pr.v1.TEST-XC2011",
+ "itemType": "PRODUCT",
+ "siteId": 1,
+ "name": "Philips XC2011/01",
+ "url": "https://www.idealo.de/preisvergleich/OffersOfProduct/203830913_-xc2011-01-philips.html",
+ "imageUrls": [],
+ "nextOffset": 3,
+ "offers": [],
+ "productSpecification": {
+  "groups": [
+   {
+    "name": "Effizienz & Nachhaltigkeit",
+    "type": "DEFAULT",
+    "attributes": [
+     {
+      "name": "Akkuspannung",
+      "value": "21,6 V"
+     },
+     {
+      "name": "Betriebszeit",
+      "value": "40 Min."
+     },
+     {
+      "name": "Ladezeit",
+      "value": "5 h"
+     }
+    ]
+   },
+   {
+    "name": "Filtersystem",
+    "type": "DEFAULT",
+    "attributes": [
+     {
+      "name": "Behältervolumen",
+      "value": "0,5 Liter"
+     },
+     {
+      "name": "Filtersystem",
+      "value": "Abluftfilter"
+     },
+     {
+      "name": "Saugtechnologie",
+      "value": "beutellos"
+     }
+    ]
+   },
+   {
+    "name": "Komfort & Sicherheit",
+    "type": "DEFAULT",
+    "attributes": [
+     {
+      "name": "Anzahl Akkus",
+      "value": "mit 1 Akku"
+     },
+     {
+      "name": "Ausstattung",
+      "value": "Wandhalterung"
+     }
+    ]
+   },
+   {
+    "name": "Technische Daten",
+    "type": "DEFAULT",
+    "attributes": [
+     {
+      "name": "Akkuart",
+      "value": "Lithium-Ionen"
+     },
+     {
+      "name": "Stromversorgung",
+      "value": "Akkubetrieb"
+     },
+     {
+      "name": "Gesamtgewicht",
+      "value": "1,5 kg"
+     }
+    ]
+   },
+   {
+    "name": "",
+    "type": "IMPORTANT",
+    "attributes": [
+     {
+      "name": "Gelistet seit",
+      "value": "Februar 2024"
+     },
+     {
+      "name": "Produkttyp",
+      "value": "Stielstaubsauger"
+     },
+     {
+      "name": "geeignet für",
+      "value": "Hartboden, Teppichboden"
+     },
+     {
+      "name": "Farbe",
+      "value": "blau"
+     },
+     {
+      "name": "Staubsauger Reinigungsmethode",
+      "value": "Saugen"
+     }
+    ]
+   }
+  ]
+ },
+ "productOverview": [
+  "blau",
+  "Saugen",
+  "21,6 V",
+  "Betriebszeit 40 Min.",
+  "Ladezeit 5 h",
+  "Behältervolumen 0,5 Liter",
+  "beutellos",
+  "mit 1 Akku",
+  "Lithium-Ionen",
+  "Gesamtgewicht 1,5 kg"
+ ],
+ "productDetailsUrl": "https://www.idealo.de/preisvergleich/OffersOfProduct/203830913_-xc2011-01-philips.html#datasheet"
+}

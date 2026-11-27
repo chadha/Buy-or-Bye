@@ -1,0 +1,205 @@
+{
+ "_note": "Recorded live 2026-11-27 from mcp.idealo.com get_product_price_history (Philips XC2011/01, DE).",
+ "priceTrend": {
+  "history": [
+   {
+    "dateTime": 1793228399999,
+    "price": "146,31 €",
+    "dateTimeISO": "2026-10-28T22:59:59.999Z"
+   },
+   {
+    "dateTime": 1793314799999,
+    "price": "146,31 €",
+    "dateTimeISO": "2026-10-29T22:59:59.999Z",
+    "priceChangePercent": 0
+   },
+   {
+    "dateTime": 1793401199999,
+    "price": "146,31 €",
+    "dateTimeISO": "2026-10-30T22:59:59.999Z",
+    "priceChangePercent": 0
+   },
+   {
+    "dateTime": 1793487599999,
+    "price": "146,31 €",
+    "dateTimeISO": "2026-10-31T22:59:59.999Z",
+    "priceChangePercent": 0
+   },
+   {
+    "dateTime": 1793573999999,
+    "price": "146,31 €",
+    "dateTimeISO": "2026-11-01T22:59:59.999Z",
+    "priceChangePercent": 0
+   },
+   {
+    "dateTime": 1793660399999,
+    "price": "129,99 €",
+    "dateTimeISO": "2026-11-02T22:59:59.999Z",
+    "priceChangePercent": -11.154398195612057
+   },
+   {
+    "dateTime": 1793746799999,
+    "price": "129,99 €",
+    "dateTimeISO": "2026-11-03T22:59:59.999Z",
+    "priceChangePercent": 0
+   },
+   {
+    "dateTime": 1793833199999,
+    "price": "129,99 €",
+    "dateTimeISO": "2026-11-04T22:59:59.999Z",
+    "priceChangePercent": 0
+   },
+   {
+    "dateTime": 1793919599999,
+    "price": "129,99 €",
+    "dateTimeISO": "2026-11-05T22:59:59.999Z",
+    "priceChangePercent": 0
+   },
+   {
+    "dateTime": 1794005999999,
+    "price": "129,99 €",
+    "dateTimeISO": "2026-11-06T22:59:59.999Z",
+    "priceChangePercent": 0
+   },
+   {
+    "dateTime": 1794092399999,
+    "price": "129,99 €",
+    "dateTimeISO": "2026-11-07T22:59:59.999Z",
+    "priceChangePercent": 0
+   },
+   {
+    "dateTime": 1794178799999,
+    "price": "129,99 €",
+    "dateTimeISO": "2026-11-08T22:59:59.999Z",
+    "priceChangePercent": 0
+   },
+   {
+    "dateTime": 1794265199999,
+    "price": "129,99 €",
+    "dateTimeISO": "2026-11-09T22:59:59.999Z",
+    "priceChangePercent": 0
+   },
+   {
+    "dateTime": 1794351599999,
+    "price": "129,99 €",
+    "dateTimeISO": "2026-11-10T22:59:59.999Z",
+    "priceChangePercent": 0
+   },
+   {
+    "dateTime": 1794437999999,
+    "price": "129,99 €",
+    "dateTimeISO": "2026-11-11T22:59:59.999Z",
+    "priceChangePercent": 0
+   },
+   {
+    "dateTime": 1794524399999,
+    "price": "129,99 €",
+    "dateTimeISO": "2026-11-12T22:59:59.999Z",
+    "priceChangePercent": 0
+   },
+   {
+    "dateTime": 1794610799999,
+    "price": "129,00 €",
+    "dateTimeISO": "2026-11-13T22:59:59.999Z",
+    "priceChangePercent": -0.7615970459266097
+   },
+   {
+    "dateTime": 1794697199999,
+    "price": "129,00 €",
+    "dateTimeISO": "2026-11-14T22:59:59.999Z",
+    "priceChangePercent": 0
+   },
+   {
+    "dateTime": 1794783599999,
+    "price": "129,00 €",
+    "dateTimeISO": "2026-11-15T22:59:59.999Z",
+    "priceChangePercent": 0
+   },
+   {
+    "dateTime": 1794869999999,
+    "price": "95,00 €",
+    "dateTimeISO": "2026-11-16T22:59:59.999Z",
+    "priceChangePercent": -26.356589147286826
+   },
+   {
+    "dateTime": 1794956399999,
+    "price": "95,00 €",
+    "dateTimeISO": "2026-11-17T22:59:59.999Z",
+    "priceChangePercent": 0
+   },
+   {
+    "dateTime": 1795042799999,
+    "price": "95,00 €",
+    "dateTimeISO": "2026-11-18T22:59:59.999Z",
+    "priceChangePercent": 0
+   },
+   {
+    "dateTime": 1795129199999,
+    "price": "89,99 €",
+    "dateTimeISO": "2026-11-19T22:59:59.999Z",
+    "priceChangePercent": -5.273684210526316
+   },
+   {
+    "dateTime": 1795215599999,
+    "price": "89,99 €",
+    "dateTimeISO": "2026-11-20T22:59:59.999Z",
+    "priceChangePercent": 0
+   },
+   {
+    "dateTime": 1795301999999,
+    "price": "89,99 €",
+    "dateTimeISO": "2026-11-21T22:59:59.999Z",
+    "priceChangePercent": 0
+   },
+   {
+    "dateTime": 1795388399999,
+    "price": "89,99 €",
+    "dateTimeISO": "2026-11-22T22:59:59.999Z",
+    "priceChangePercent": 0
+   },
+   {
+    "dateTime": 1795474799999,
+    "price": "89,99 €",
+    "dateTimeISO": "2026-11-23T22:59:59.999Z",
+    "priceChangePercent": 0
+   },
+   {
+    "dateTime": 1795561199999,
+    "price": "89,99 €",
+    "dateTimeISO": "2026-11-24T22:59:59.999Z",
+    "priceChangePercent": 0
+   },
+   {
+    "dateTime": 1795647599999,
+    "price": "89,30 €",
+    "dateTimeISO": "2026-11-25T22:59:59.999Z",
+    "priceChangePercent": -0.7667518613179243
+   },
+   {
+    "dateTime": 1795733999999,
+    "price": "89,30 €",
+    "dateTimeISO": "2026-11-26T22:59:59.999Z",
+    "priceChangePercent": 0
+   },
+   {
+    "dateTime": 1795798606275,
+    "price": "89,30 €",
+    "dateTimeISO": "2026-11-27T16:56:46.275Z",
+    "priceChangePercent": 0
+   }
+  ],
+  "statistics": {
+   "minPrice": "89,30 €",
+   "maxPrice": "146,31 €",
+   "avgPrice": "117,46 €",
+   "currentPrice": "89,30 €",
+   "priceChangePercent": -38.96521085366687,
+   "lowestPriceDate": "2026-11-25T22:59:59.999Z",
+   "highestPriceDate": "2026-10-28T22:59:59.999Z"
+  },
+  "samplingGranularity": "daily",
+  "dataSourceConfidence": 0.95,
+  "periodDays": 29.7,
+  "totalDataPoints": 31
+ }
+}

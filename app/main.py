@@ -3,15 +3,21 @@
 from __future__ import annotations
 
 import logging
+import re
 from datetime import date, timedelta
 from importlib import resources
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse
+from pydantic import BaseModel, Field
 
 from .extract import Extracted, parse_photo, parse_text
+from .identity_resolution import Resolution, resolve_identity
 from .models import Deal, Verdict
+from .product_identity import UrlIdentityReport, UrlValidationError, identify_product_url
+from .shop_page import prices_for_link
 from .sources import PriceSource, SourceError, make_source
+from .url_check import UrlCheckReport, check_product_url
 from .verdict import decide
 
 log = logging.getLogger("buy_or_bye")
@@ -35,12 +41,16 @@ async def healthz() -> dict[str, str]:
 
 @app.get("/", response_class=HTMLResponse)
 async def index() -> str:
-    return resources.files("app").joinpath("static/index.html").read_text()
+    return resources.files("app").joinpath("static/index.html").read_text(encoding="utf-8")
 
 
 @app.post("/api/extract/text")
 async def extract_text(body: dict[str, str]) -> Extracted:
-    return parse_text(body.get("text", "")[:2000])
+    text = body.get("text", "")[:2000].strip()
+    # Live mode only: demo mode stays fully offline.
+    if source.name != "demo" and re.match(r"https?://", text):
+        return await prices_for_link(text, source)
+    return parse_text(text)
 
 
 @app.post("/api/extract/photo")
@@ -52,9 +62,69 @@ async def extract_photo(photo: UploadFile = PHOTO) -> Extracted:
         raise HTTPException(415, "Please upload an image.")
     try:
         return await parse_photo(data, photo.content_type or "image/jpeg")
-    except Exception:  # noqa: BLE001 - surfaced to the user as "type it instead"
+    except Exception:  # noqa: BLE001 - surfaced to the user as "paste the link instead"
         log.exception("photo extraction failed")
-        return Extracted(note="We couldn't read the photo. Please type the details.")
+        return Extracted(note="We couldn't read the photo. Try a sharper photo of the price tag.")
+
+
+class IdentifyRequest(BaseModel):
+    url: str = Field(max_length=4096)
+
+
+@app.post("/api/v1/product-url/identify")
+async def identify_product(req: IdentifyRequest) -> UrlIdentityReport:
+    """BOB-URL-001: validate a product URL and extract its identity, each field with a source.
+
+    Live mode reads the page's structured data; demo mode stays offline. An unusable URL
+    gives 422 with a stable `{"code", "message"}` detail.
+    """
+    try:
+        return await identify_product_url(req.url, offline=source.name == "demo")
+    except UrlValidationError as exc:
+        raise HTTPException(422, {"code": exc.code, "message": exc.message}) from exc
+
+
+@app.post("/api/v1/product-url/resolve")
+async def resolve_product(req: IdentifyRequest) -> Resolution:
+    """BOB-URL-001 M4: identify the URL, then resolve it to one idealo product and verify the
+    identity fields. Demo mode stays offline and reports "unavailable"."""
+    offline = source.name == "demo" or not hasattr(source, "search")
+    try:
+        report = await identify_product_url(req.url, offline=offline)
+    except UrlValidationError as exc:
+        raise HTTPException(422, {"code": exc.code, "message": exc.message}) from exc
+    if offline:
+        return Resolution(
+            status="unavailable",
+            identity=report.identity,
+            identification=report,
+            reasons=["demo mode is offline: idealo was not searched"],
+        )
+    return await resolve_identity(report, source)  # type: ignore[arg-type]
+
+
+@app.post("/api/v1/product-url/check")
+async def check_product(req: IdentifyRequest) -> UrlCheckReport:
+    """BOB-URL-001 M5: judge the product behind a URL against idealo market data. Every price
+    in the report carries its provenance; the label comes from verdict.decide, unchanged."""
+    offline = source.name == "demo" or not hasattr(source, "market_data")
+    try:
+        if offline:
+            report = await identify_product_url(req.url, offline=True)
+        else:
+            return await check_product_url(req.url, source)  # type: ignore[arg-type]
+    except UrlValidationError as exc:
+        raise HTTPException(422, {"code": exc.code, "message": exc.message}) from exc
+    return UrlCheckReport(
+        status="unavailable",
+        reasons=["demo mode is offline: idealo was not searched"],
+        resolution=Resolution(
+            status="unavailable",
+            identity=report.identity,
+            identification=report,
+            reasons=["demo mode is offline"],
+        ),
+    )
 
 
 @app.post("/api/check")

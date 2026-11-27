@@ -18,6 +18,7 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-      - run: pip install -e ".[dev]"
+      # The idealo extra (mcp SDK) is installed so the OAuth/token tests and mypy cover it.
+      - run: pip install -e ".[dev,idealo]"
       - run: make check
       - run: make demo

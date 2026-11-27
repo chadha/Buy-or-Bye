@@ -11,10 +11,22 @@ A shopper looking at one deal can't check that in the moment.
 One shopper, one deal, on a phone or laptop: in a shop, in an ad, or on a product page.
 
 ## Flow
-1. **Input:** paste a link, type the deal, or take a photo of a price tag or ad.
-2. **Confirm:** the app fills product, price, "was" price and shop; the shopper corrects them.
-3. **Verdict:** BUY, BYE, WAIT or "not enough data", a price-history chart and one line per
-   reason, each with the numbers it used and where they came from.
+1. **Input:** paste the product link or take a photo of a price tag or ad. There are no
+   manual price fields.
+2. **Identify (live mode, a link):** the link is validated, the page's structured data
+   read once, and the product resolved to one idealo product (exact model and variant).
+   "What we found" lists each fact with its source and status: *verified* (two sources
+   agree), *one source*, or *sources disagree*. Facts no source states (e.g. the product
+   series) are shown as not stated, never guessed.
+3. **Price:** the shop page's own price, else idealo's current offer from the same shop, with
+   the seller, shipping (or "not stated") and when idealo last saw it; such a price is marked
+   as not live. No price found → no verdict; the app asks for a photo instead.
+4. **Verdict:** BUY, BYE, WAIT or "not enough data", a price-history chart and one line per
+   reason, each with the numbers it used and where they came from. Only a matched product is
+   judged. Demo mode and photos use the offline path (`/api/extract/*` + `/api/check`).
+
+API: `POST /api/v1/product-url/identify`, `/resolve`, `/check` (BOB-URL-001, details in
+`docs/bob-url-001.md`); `/api/extract/*` and `/api/check` are unchanged.
 
 ## Checks (`app/verdict.py`, thresholds in `Thresholds`)
 | Check | Data | Signal |
@@ -32,8 +44,11 @@ One shopper, one deal, on a phone or laptop: in a shop, in an ad, or on a produc
 low. Everything else → WAIT.
 
 ## Out of scope (Friday)
-Accounts, price alerts that buy, browser extension, native app, scraping shop pages.
+Accounts, price alerts that buy, browser extension, native app, crawling or scraping shop
+pages. Reading the one page a shopper pastes (structured data only, robots.txt honoured) is
+in scope: see `docs/shop-pages.md`.
 
 ## Verification
 `make check` passes; `make demo` shows ✓ for all five demo deals; with `PRICE_SOURCE=idealo`,
-one real product returns a verdict whose numbers match idealo's own price chart.
+one real product returns a verdict whose numbers match idealo's own price chart;
+`tests/test_golden_url_check.py` pins the full report for the Philips XC2011/01 link.

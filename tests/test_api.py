@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 from app import main
 from app.sources import DemoSource, IdealoMCPSource, SourceError
 
-DEALS = json.loads((Path(__file__).parent / "fixtures" / "deals.json").read_text())
+DEALS = json.loads((Path(__file__).parent / "fixtures" / "deals.json").read_text(encoding="utf-8"))
 client = TestClient(main.app)
 
 
@@ -32,10 +32,17 @@ def test_invalid_price_is_rejected():
     assert client.post("/api/check", json={"product": "x y", "price": -1}).status_code == 422
 
 
-def test_unconfigured_idealo_source_is_a_clear_503(monkeypatch):
-    monkeypatch.setattr(main, "source", IdealoMCPSource(url=""))
+class _FailingSource:
+    name = "idealo"
+
+    async def find(self, query: str):
+        raise SourceError("idealo sign-in required: run make idealo-login")
+
+
+def test_price_source_failure_is_a_clear_503_not_a_verdict(monkeypatch):
+    monkeypatch.setattr(main, "source", _FailingSource())
     r = client.post("/api/check", json={"product": "Anything", "price": 10})
-    assert r.status_code == 503 and "not configured" in r.json()["detail"]
+    assert r.status_code == 503 and "idealo" in r.json()["detail"]
 
 
 def test_index_and_health():
@@ -43,10 +50,10 @@ def test_index_and_health():
     assert client.get("/healthz").json()["ok"] == "true"
 
 
-def test_photo_without_llm_config_asks_user_to_type(monkeypatch):
+def test_photo_without_llm_config_asks_for_the_link(monkeypatch):
     monkeypatch.delenv("LLM_API_KEY", raising=False)
     r = client.post("/api/extract/photo", files={"photo": ("t.jpg", b"\xff\xd8\xff", "image/jpeg")})
-    assert r.status_code == 200 and "type the details" in r.json()["note"]
+    assert r.status_code == 200 and "paste the product link" in r.json()["note"]
 
 
 def test_non_image_upload_is_rejected():
@@ -54,6 +61,12 @@ def test_non_image_upload_is_rejected():
     assert r.status_code == 415
 
 
-async def test_idealo_mapping_is_explicitly_unimplemented():
-    with pytest.raises(SourceError):
-        IdealoMCPSource._to_product({})
+def test_idealo_source_defaults_to_the_documented_tools():
+    src = IdealoMCPSource()
+    assert src.url == "https://mcp.idealo.com/mcp"
+    assert src.tools == {
+        "search": "search_products",
+        "history": "get_product_price_history",
+        "offers": "get_product_offers",
+        "details": "get_product_details",  # BOB-URL-001 M3, schema verified live
+    }

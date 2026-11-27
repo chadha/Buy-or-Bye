@@ -1,0 +1,68 @@
+{
+ "_note": "get_product_details tool definition as listed by mcp.idealo.com (list_tools) on 2026-11-27.",
+ "name": "get_product_details",
+ "inputSchema": {
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+   "productRef": {
+    "type": "string",
+    "minLength": 1,
+    "description": "Opaque productRef from search_products. It identifies the item. The marketplace comes from country."
+   },
+   "country": {
+    "description": "Marketplace: DE (Germany), AT (Austria), GB or UK (United Kingdom), FR (France), IT (Italy), ES (Spain). An omitted or unknown code uses Germany.",
+    "type": "string",
+    "minLength": 2,
+    "maxLength": 2
+   },
+   "type": {
+    "description": "Catalog item shape from search result `itemType`. Omit unless you need CLUSTER or SINGLE_OFFER.",
+    "type": "string",
+    "enum": [
+     "CLUSTER",
+     "PRODUCT",
+     "SINGLE_OFFER"
+    ]
+   }
+  },
+  "required": [
+   "productRef"
+  ]
+ },
+ "outputSchemaProperties": [
+  "badges",
+  "expertReview",
+  "imageUrls",
+  "itemType",
+  "name",
+  "nameDelta",
+  "nextOffset",
+  "offers",
+  "priceTrend",
+  "productDetailsUrl",
+  "productOverview",
+  "productRef",
+  "productSpecification",
+  "prosCons",
+  "siteId",
+  "testReports",
+  "url",
+  "userReviews"
+ ],
+ "outputSchemaRequired": [
+  "productRef",
+  "itemType",
+  "siteId",
+  "name",
+  "imageUrls",
+  "nextOffset",
+  "offers"
+ ],
+ "annotations": {
+  "readOnlyHint": true,
+  "destructiveHint": false,
+  "idempotentHint": true,
+  "openWorldHint": true
+ }
+}

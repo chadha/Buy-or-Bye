@@ -57,6 +57,19 @@
   .ev { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
   .hidden { display: none; }
   .err { color: var(--bye); font-weight: 600; }
+  dl.facts { display: grid; grid-template-columns: max-content 1fr; gap: 6px 12px; margin: 10px 0 0; }
+  dl.facts dt { color: var(--muted); font-size: 13px; padding-top: 2px; }
+  dl.facts dd { margin: 0; }
+  .src { display: block; font-size: 12.5px; color: var(--muted); }
+  .st { font-size: 11.5px; font-weight: 700; padding: 1px 7px; border-radius: 99px; margin-left: 6px;
+        white-space: nowrap; border: 1px solid currentColor; }
+  .st.verified { color: var(--buy); } .st.contradicted { color: var(--bye); }
+  .st.unverified { color: var(--muted); }
+  ul.offers { list-style: none; padding: 0; margin: 6px 0 0; font-size: 14px; }
+  ul.offers li { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0;
+                 border-top: 1px solid var(--line); }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
+       margin: 14px 0 0; }
 </style>
 </head>
 <body>
@@ -64,31 +77,19 @@
   <header><h1>Buy or Bye</h1><span class="badge" id="src">…</span></header>
   <p class="tag">Is this Black Friday deal real? We check the discount against idealo price history.</p>
 
-  <section class="card">
-    <label for="free">Paste a link or type the deal</label>
-    <textarea id="free" placeholder="e.g. Polar Air Fryer XL 6L 79,99 € statt 249,99 €"></textarea>
+  <form class="card" id="deal">
+    <label for="free">Paste the product link</label>
+    <textarea id="free" required placeholder="https://… (the shop's product page)"></textarea>
     <div class="actions">
-      <button class="ghost" id="read">Read it</button>
+      <button type="submit" id="go">Check deal</button>
       <label class="btn ghost" style="margin:0">Take a photo
         <input id="photo" type="file" accept="image/*" capture="environment" class="hidden">
       </label>
     </div>
     <div class="chips" id="demos"></div>
-  </section>
-
-  <form class="card" id="deal">
-    <label for="product">Product</label>
-    <input id="product" required minlength="2" placeholder="Brand and model">
-    <div class="row">
-      <div><label for="price">Deal price (€)</label><input id="price" required inputmode="decimal"></div>
-      <div><label for="was">Claimed “was” price (€)</label><input id="was" inputmode="decimal"></div>
-    </div>
-    <label for="shop">Shop (optional)</label>
-    <input id="shop">
-    <p class="note" id="hint">Check these details, then judge the deal.</p>
-    <div class="actions"><button type="submit">Check deal</button></div>
   </form>
 
+  <section class="card hidden" id="found" aria-live="polite"></section>
   <section class="card hidden" id="out" aria-live="polite"></section>
 </main>
 <script>
@@ -101,15 +102,138 @@ const num = (s) => { if (!s) return null; s = String(s).trim().replace(/\s/g, ""
 const eur = (v) => "€" + Number(v).toLocaleString("en", {minimumFractionDigits: 2, maximumFractionDigits: 2});
 const NAMES = {BUY: "BUY", BYE: "BYE", WAIT: "WAIT", NOT_ENOUGH_DATA: "Not enough data"};
 
-function fill(x) {
-  if (x.product) $("#product").value = x.product;
-  if (x.price) $("#price").value = x.price;
-  $("#was").value = x.was_price ?? "";
-  $("#shop").value = x.shop ?? "";
-  $("#hint").textContent = x.note || "Check these details, then judge the deal.";
+// No manual fields: the link or photo is read, what was found is shown with its source,
+// and the deal is judged straight away. Nothing is guessed: no price found, no verdict.
+function showFound(x) {
+  const rows = [["Product", x.product], ["Deal price", x.price && eur(x.price)],
+                ["Claimed “was” price", x.was_price ? eur(x.was_price) : "none found"],
+                ["Shop", x.shop]].filter(([, v]) => v);
+  $("#found").innerHTML = `<div class="note"><b>What we found</b></div>
+    <ul class="reasons">${rows.map(([k, v]) => `<li>${esc(k)}: <b>${esc(v)}</b></li>`).join("")}</ul>
+    ${x.note ? `<p class="note">${esc(x.note)}</p>` : ""}`;
+  $("#found").classList.remove("hidden");
+}
+
+function notFound(x, what) {
+  $("#found").innerHTML = `<p class="err">We couldn't find the price ${esc(what)}.</p>
+    ${x && x.note ? `<p class="note">${esc(x.note)}</p>` : ""}
+    <p class="note">Try <b>Take a photo</b> of the price tag or a screenshot of the price.</p>`;
+  $("#found").classList.remove("hidden");
+  $("#out").classList.add("hidden");
+}
+
+function busy(on, text) {
+  $("#go").disabled = on;
+  if (on) {
+    $("#found").innerHTML = `<p class="note">${esc(text)}</p>`;
+    $("#found").classList.remove("hidden");
+    $("#out").classList.add("hidden");
+  }
+}
+
+async function judge(x) {
+  if (!x || !x.price || !x.product || x.product.length < 2) return notFound(x, "on this page");
+  showFound(x);
+  const body = {product: x.product, price: x.price,
+                was_price: x.was_price && x.was_price > x.price ? x.was_price : null,
+                shop: x.shop || null};
+  $("#out").classList.remove("hidden"); $("#out").innerHTML = `<p class="note">Checking price history…</p>`;
+  const r = await fetch("/api/check", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
+  if (!r.ok) { const err = await r.json().catch(() => ({})); $("#out").innerHTML = `<p class="err">${esc(err.detail || "Something went wrong.")}</p>`; return; }
+  render(await r.json());
+}
+
+// --- URL check (BOB-URL-001): identity, provenance, shipping and freshness ---------------------
+// Live mode sends a pasted link to /api/v1/product-url/check. Every value shown says where it
+// came from; statuses are written out, not shown by colour alone. Prices last seen by idealo
+// are never presented as live.
+let LIVE = false;
+const isUrl = (t) => /^https?:\/\/\S+$/i.test(t);
+const SOURCE = {json_ld: "shop page", meta: "shop page", shop_page: "shop page", url_path: "link",
+                url_host: "shop address", idealo: "idealo"};
+const STATUS = {verified: "verified", unverified: "one source", contradicted: "sources disagree"};
+const FIELDS = [["name", "Product"], ["brand", "Brand"], ["model", "Model"], ["category", "Type"],
+                ["market", "Market"]];
+const UNKNOWN = {family: "product series", gtin: "barcode (GTIN)", mpn: "maker’s part number",
+                 currency: "currency", category: "product type", brand: "brand"};
+
+function ago(iso) {
+  if (!iso) return null;
+  const min = Math.round((Date.now() - Date.parse(iso)) / 60000);
+  if (!isFinite(min)) return null;
+  if (min < 1) return "just now";
+  if (min < 60) return `${min} min ago`;
+  const h = Math.round(min / 60);
+  return h < 48 ? `${h} h ago` : `${Math.round(h / 24)} days ago`;
+}
+
+function shipping(o) {
+  if (o.shipping_included === true) return "shipping included";
+  if (o.shipping_cost === 0) return "free shipping";
+  if (o.shipping_cost != null) return `+ ${eur(o.shipping_cost)} shipping`;
+  return "shipping not stated";
+}
+
+function provenance(o) {
+  const seen = ago(o.observed_at);
+  return o.source === "idealo"
+    ? `idealo offer by ${o.seller}${seen ? `, last seen by idealo ${seen}` : ""}`
+    : `the shop’s own page${seen ? `, read ${seen}` : ""}`;
+}
+
+function fieldRow([key, label], f) {
+  if (!f) return "";
+  const by = SOURCE[f.source] + (f.corroborated_by ? ` + ${SOURCE[f.corroborated_by]}` : "");
+  return `<dt>${esc(label)}</dt><dd>${esc(f.value)}<span class="st ${esc(f.status)}">${esc(STATUS[f.status])}</span>
+    <span class="src">from ${esc(by)}</span></dd>`;
+}
+
+function showReport(r) {
+  const res = r.resolution, id = res.identity;
+  const facts = FIELDS.map(f => fieldRow(f, id[f[0]])).join("");
+  const unknown = (res.unknown || []).filter(k => UNKNOWN[k]).map(k => UNKNOWN[k]);
+  const deal = r.deal ? `<dt>Deal price</dt><dd><b>${esc(eur(r.deal.amount))}</b>
+      <span class="src">${esc(provenance(r.deal))} · ${esc(shipping(r.deal))}</span></dd>` : "";
+  const was = r.was ? `<dt>Claimed “was”</dt><dd>${esc(eur(r.was.amount))}
+      <span class="src">${esc(provenance(r.was))}</span></dd>`
+    : (r.deal ? `<dt>Claimed “was”</dt><dd><span class="src">none stated by the shop</span></dd>` : "");
+  const m = r.market;
+  const market = m ? `<p class="note">Compared with ${esc(m.history_days)} days of idealo price history
+      (${esc(m.history_window)}, ${esc(m.market)}) and ${esc(m.offers)} current offers, fetched ${esc(ago(m.retrieved_at) || "now")}.</p>` : "";
+  const offers = r.offers.length ? `<h2>Current offers on idealo</h2><ul class="offers">${r.offers.map(o =>
+      `<li><span>${esc(o.seller)}<span class="src">${esc(shipping(o))}${ago(o.observed_at) ? " · seen " + esc(ago(o.observed_at)) : ""}</span></span><b>${esc(eur(o.amount))}</b></li>`).join("")}</ul>` : "";
+  const live = r.deal && r.deal.source === "idealo"
+    ? `<p class="note">This is the price idealo last saw at the shop, not a live price. Check the shop before you buy.</p>` : "";
+  $("#found").innerHTML = `<div class="note"><b>What we found</b>
+      ${res.match ? ` · matched on idealo (${esc(res.confidence)} confidence)` : ""}</div>
+    <dl class="facts">${facts}${deal}${was}</dl>
+    ${unknown.length ? `<p class="note">Not stated by any source: ${esc(unknown.join(", "))}.</p>` : ""}
+    ${live}${market}${offers}`;
+  $("#found").classList.remove("hidden");
+  if (r.verdict && r.status === "judged") return render(r.verdict);
+  const why = (r.reasons || []).concat(r.verdict ? [r.verdict.headline] : []);
+  $("#out").innerHTML = `<p class="err">No verdict for this link.</p>
+    <ul class="reasons">${why.map(x => `<li>${esc(x)}</li>`).join("")}</ul>
+    ${r.deal ? "" : `<p class="note">Try <b>Take a photo</b> of the price tag or a screenshot of the price.</p>`}`;
+  $("#out").classList.remove("hidden");
+}
+
+async function checkUrl(url) {
+  busy(true, "Reading the product page and checking idealo…");
+  try {
+    const r = await fetch("/api/v1/product-url/check", {method: "POST",
+      headers: {"Content-Type": "application/json"}, body: JSON.stringify({url})});
+    const body = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      $("#found").innerHTML = `<p class="err">${esc(body.detail?.message || "This link can’t be checked.")}</p>`;
+      return;
+    }
+    showReport(body);
+  } finally { busy(false); }
 }
 
 fetch("/healthz").then(r => r.json()).then(h => {
+  LIVE = h.source === "idealo";
   $("#src").textContent = h.source === "idealo" ? "Live idealo data" : "Demo data (fictional products)";
   if (h.source !== "demo") return;
   const demos = [
@@ -120,23 +244,33 @@ fetch("/healthz").then(r => r.json()).then(h => {
   ];
   for (const [name, d] of demos) {
     const b = document.createElement("button"); b.className = "chip"; b.type = "button";
-    b.textContent = name; b.onclick = () => { fill(d); $("#deal").requestSubmit(); };
+    b.textContent = name; b.onclick = () => judge({...d, note: "Demo deal (fictional product)."});
     $("#demos").appendChild(b);
   }
 });
 
-$("#read").onclick = async () => {
-  const r = await fetch("/api/extract/text", {method: "POST", headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({text: $("#free").value})});
-  fill(await r.json());
+$("#deal").onsubmit = async (e) => {
+  e.preventDefault();
+  const text = $("#free").value.trim(); if (!text) return;
+  if (LIVE && isUrl(text)) return checkUrl(text);  // demo mode and plain text: the offline path
+  busy(true, "Reading the product page…");
+  try {
+    const r = await fetch("/api/extract/text", {method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({text})});
+    await judge(r.ok ? await r.json() : null);
+  } finally { busy(false); }
 };
 
 $("#photo").onchange = async (e) => {
   const f = e.target.files[0]; if (!f) return;
-  $("#hint").textContent = "Reading the photo…";
-  const fd = new FormData(); fd.append("photo", f);
-  const r = await fetch("/api/extract/photo", {method: "POST", body: fd});
-  fill(r.ok ? await r.json() : {note: "We couldn't read the photo. Please type the details."});
+  busy(true, "Reading the photo…");
+  try {
+    const fd = new FormData(); fd.append("photo", f);
+    const r = await fetch("/api/extract/photo", {method: "POST", body: fd});
+    const x = r.ok ? await r.json() : null;
+    if (!x || !x.price) return notFound(x, "in this photo");
+    await judge(x);
+  } finally { busy(false); e.target.value = ""; }
 };
 
 function chart(v) {
@@ -167,7 +301,7 @@ function chart(v) {
 function render(v) {
   const src = v.product?.source === "idealo" ? "idealo" : "demo data";
   const reasons = v.reasons.map(r => `<li><span class="pol ${r.polarity}">${r.polarity === "for" ? "In favour" : r.polarity === "against" ? "Against" : "Note"}</span>${esc(r.text)}
-      <div class="ev">${r.evidence.map(e => `${esc(e.metric)}: ${typeof e.value === "number" ? esc(eur(e.value)) : esc(e.value)}${e.window ? " (" + esc(e.window) + ")" : ""} · ${esc(e.source === "user" ? "you" : e.source)}`).join(" · ")}</div></li>`).join("");
+      <div class="ev">${r.evidence.map(e => `${esc(e.metric)}: ${typeof e.value === "number" ? esc(eur(e.value)) : esc(e.value)}${e.window ? " (" + esc(e.window) + ")" : ""} · ${esc(e.source === "user" ? "the deal" : e.source)}`).join(" · ")}</div></li>`).join("");
   $("#out").innerHTML = `
     <div class="verdict"><span class="label ${v.label}">${NAMES[v.label]}</span>
       <div><div class="headline">${esc(v.headline)}</div>
@@ -178,21 +312,11 @@ function render(v) {
   $("#out").scrollIntoView({behavior: "smooth", block: "start"});
 }
 
-$("#deal").onsubmit = async (e) => {
-  e.preventDefault();
-  const body = {product: $("#product").value.trim(), price: num($("#price").value),
-                was_price: num($("#was").value), shop: $("#shop").value.trim() || null};
-  if (!body.price) { $("#hint").textContent = "Please enter the deal price."; return; }
-  $("#out").classList.remove("hidden"); $("#out").innerHTML = `<p class="note">Checking price history…</p>`;
-  const r = await fetch("/api/check", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
-  if (!r.ok) { const err = await r.json().catch(() => ({})); $("#out").innerHTML = `<p class="err">${esc(err.detail || "Something went wrong.")}</p>`; return; }
-  render(await r.json());
-};
-// Shareable links: /?product=...&price=...&was=...&shop=... fills the form and checks it.
+// Shareable links: /?product=...&price=...&was=...&shop=... checks that deal directly.
 const qs = new URLSearchParams(location.search);
-if (qs.get("product") && qs.get("price")) {
-  fill({product: qs.get("product"), price: qs.get("price"), was_price: qs.get("was"), shop: qs.get("shop")});
-  $("#deal").requestSubmit();
+if (qs.get("product") && num(qs.get("price"))) {
+  judge({product: qs.get("product"), price: num(qs.get("price")), was_price: num(qs.get("was")),
+         shop: qs.get("shop"), note: "From a shared link."});
 }
 </script>
 </body>

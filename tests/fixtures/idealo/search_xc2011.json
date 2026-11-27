@@ -1,0 +1,33 @@
+{
+ "_note": "Recorded live 2026-11-27 from mcp.idealo.com search_products (query \"Philips XC2011/01\", DE); productRefs replaced, images and filters dropped.",
+ "query": "Philips XC2011/01",
+ "results": [
+  {
+   "itemType": "PRODUCT",
+   "siteId": 1,
+   "name": "Philips XC2011/01",
+   "price": "89,30 €",
+   "url": "https://www.idealo.de/preisvergleich/OffersOfProduct/203830913_-xc2011-01-philips.html",
+   "totalOfferCount": 6,
+   "productRef": "pr.v1.TEST-0"
+  },
+  {
+   "itemType": "SINGLE_OFFER",
+   "siteId": 1,
+   "name": "Ersatzbürste für Philips 3000 Series Akku-Staubsauger, schwarz",
+   "price": "73,95 €",
+   "url": "https://www.idealo.de/relocator/relocate?offerKey=66fbbe61f8f935dd2ac990b9db1def1c&type=oc_offer&media=ipc-public-mcp",
+   "totalOfferCount": 1,
+   "productRef": "pr.v1.TEST-1"
+  },
+  {
+   "itemType": "PRODUCT",
+   "siteId": 1,
+   "name": "Philips XD1111/10",
+   "price": "75,90 €",
+   "url": "https://www.idealo.de/preisvergleich/OffersOfProduct/213999222_-xd1111-10-philips.html",
+   "totalOfferCount": 2,
+   "productRef": "pr.v1.TEST-2"
+  }
+ ]
+}

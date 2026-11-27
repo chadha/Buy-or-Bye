@@ -1,0 +1,535 @@
+{
+ "deal": {
+  "amount": 89.99,
+  "currency": "EUR",
+  "kind": "deal_price",
+  "market": "DE",
+  "observed_at": "2026-11-27T16:56:47.945000Z",
+  "seller": "philips.de (Home-appliances)",
+  "shipping_cost": 0.0,
+  "shipping_included": false,
+  "source": "idealo",
+  "source_url": "https://www.idealo.de/relocator/relocate?offerKey=TEST0"
+ },
+ "market": {
+  "canonical_id": "203830913",
+  "currency": "EUR",
+  "history_days": 31,
+  "history_window": "2026-10-28..2026-11-27",
+  "market": "DE",
+  "offers": 4,
+  "product_url": "https://www.idealo.de/preisvergleich/OffersOfProduct/203830913_-xc2011-01-philips.html",
+  "retrieved_at": "2026-11-27T17:00:00Z",
+  "source": "idealo"
+ },
+ "offers": [
+  {
+   "amount": 89.99,
+   "currency": "EUR",
+   "kind": "offer",
+   "market": "DE",
+   "observed_at": "2026-11-27T16:56:47.945000Z",
+   "seller": "philips.de (Home-appliances)",
+   "shipping_cost": 0.0,
+   "shipping_included": false,
+   "source": "idealo",
+   "source_url": "https://www.idealo.de/relocator/relocate?offerKey=TEST0"
+  },
+  {
+   "amount": 95.0,
+   "currency": "EUR",
+   "kind": "offer",
+   "market": "DE",
+   "observed_at": "2026-11-27T16:56:47.945000Z",
+   "seller": "kaufland.de",
+   "shipping_cost": 0.0,
+   "shipping_included": false,
+   "source": "idealo",
+   "source_url": "https://www.idealo.de/relocator/relocate?offerKey=TEST1"
+  },
+  {
+   "amount": 125.99,
+   "currency": "EUR",
+   "kind": "offer",
+   "market": "DE",
+   "observed_at": "2026-11-27T16:56:47.945000Z",
+   "seller": "joybuy.de",
+   "shipping_cost": 0.0,
+   "shipping_included": false,
+   "source": "idealo",
+   "source_url": "https://www.idealo.de/relocator/relocate?offerKey=TEST2"
+  },
+  {
+   "amount": 188.69,
+   "currency": "EUR",
+   "kind": "offer",
+   "market": "DE",
+   "observed_at": "2026-11-27T16:56:47.945000Z",
+   "seller": "proshop.de",
+   "shipping_cost": 4.99,
+   "shipping_included": false,
+   "source": "idealo",
+   "source_url": "https://www.idealo.de/relocator/relocate?offerKey=TEST3"
+  }
+ ],
+ "reasons": [],
+ "resolution": {
+  "confidence": "high",
+  "details": {
+   "canonical_id": "203830913",
+   "error": null,
+   "missing": [],
+   "name": "Philips XC2011/01",
+   "overview": [
+    "blau",
+    "Saugen",
+    "21,6 V",
+    "Betriebszeit 40 Min.",
+    "Ladezeit 5 h",
+    "Behältervolumen 0,5 Liter",
+    "beutellos",
+    "mit 1 Akku",
+    "Lithium-Ionen",
+    "Gesamtgewicht 1,5 kg"
+   ],
+   "product_ref": "pr.v1.TEST-XC2011",
+   "product_type": "Stielstaubsauger",
+   "retrieved_at": "2026-11-27T17:00:00Z",
+   "source": "idealo",
+   "specifications": [
+    {
+     "group": "Effizienz & Nachhaltigkeit",
+     "name": "Akkuspannung",
+     "value": "21,6 V"
+    },
+    {
+     "group": "Effizienz & Nachhaltigkeit",
+     "name": "Betriebszeit",
+     "value": "40 Min."
+    },
+    {
+     "group": "Effizienz & Nachhaltigkeit",
+     "name": "Ladezeit",
+     "value": "5 h"
+    },
+    {
+     "group": "Filtersystem",
+     "name": "Behältervolumen",
+     "value": "0,5 Liter"
+    },
+    {
+     "group": "Filtersystem",
+     "name": "Filtersystem",
+     "value": "Abluftfilter"
+    },
+    {
+     "group": "Filtersystem",
+     "name": "Saugtechnologie",
+     "value": "beutellos"
+    },
+    {
+     "group": "Komfort & Sicherheit",
+     "name": "Anzahl Akkus",
+     "value": "mit 1 Akku"
+    },
+    {
+     "group": "Komfort & Sicherheit",
+     "name": "Ausstattung",
+     "value": "Wandhalterung"
+    },
+    {
+     "group": "Technische Daten",
+     "name": "Akkuart",
+     "value": "Lithium-Ionen"
+    },
+    {
+     "group": "Technische Daten",
+     "name": "Stromversorgung",
+     "value": "Akkubetrieb"
+    },
+    {
+     "group": "Technische Daten",
+     "name": "Gesamtgewicht",
+     "value": "1,5 kg"
+    },
+    {
+     "group": null,
+     "name": "Gelistet seit",
+     "value": "Februar 2024"
+    },
+    {
+     "group": null,
+     "name": "Produkttyp",
+     "value": "Stielstaubsauger"
+    },
+    {
+     "group": null,
+     "name": "geeignet für",
+     "value": "Hartboden, Teppichboden"
+    },
+    {
+     "group": null,
+     "name": "Farbe",
+     "value": "blau"
+    },
+    {
+     "group": null,
+     "name": "Staubsauger Reinigungsmethode",
+     "value": "Saugen"
+    }
+   ],
+   "status": "complete",
+   "url": "https://www.idealo.de/preisvergleich/OffersOfProduct/203830913_-xc2011-01-philips.html"
+  },
+  "identification": {
+   "identity": {
+    "brand": null,
+    "category": null,
+    "currency": null,
+    "family": null,
+    "gtin": null,
+    "market": {
+     "corroborated_by": null,
+     "raw": "de/de",
+     "source": "url_path",
+     "status": "unverified",
+     "value": "DE"
+    },
+    "model": {
+     "corroborated_by": null,
+     "raw": "XC2011_01",
+     "source": "url_path",
+     "status": "unverified",
+     "value": "XC2011/01"
+    },
+    "mpn": null,
+    "name": null
+   },
+   "input": {
+    "host": "www.home-appliances.philips",
+    "path": "/de/de/p/XC2011_01",
+    "shop": "home-appliances.philips",
+    "url": "https://www.home-appliances.philips/de/de/p/XC2011_01"
+   },
+   "page": {
+    "fetched": true,
+    "reason": null,
+    "retrieved_at": "<volatile>",
+    "structured_data": false
+   },
+   "schema_version": "1",
+   "warnings": [
+    "The page has no structured product data (it may load it with JavaScript); the identity comes from the URL only."
+   ]
+  },
+  "identity": {
+   "brand": {
+    "corroborated_by": "url_host",
+    "raw": "Philips XC2011/01",
+    "source": "idealo",
+    "status": "verified",
+    "value": "Philips"
+   },
+   "category": {
+    "corroborated_by": null,
+    "raw": null,
+    "source": "idealo",
+    "status": "unverified",
+    "value": "Stielstaubsauger"
+   },
+   "currency": {
+    "corroborated_by": null,
+    "raw": null,
+    "source": "idealo",
+    "status": "unverified",
+    "value": "EUR"
+   },
+   "family": null,
+   "gtin": null,
+   "market": {
+    "corroborated_by": "idealo",
+    "raw": "de/de",
+    "source": "url_path",
+    "status": "verified",
+    "value": "DE"
+   },
+   "model": {
+    "corroborated_by": "idealo",
+    "raw": "XC2011_01",
+    "source": "url_path",
+    "status": "verified",
+    "value": "XC2011/01"
+   },
+   "mpn": null,
+   "name": {
+    "corroborated_by": null,
+    "raw": null,
+    "source": "idealo",
+    "status": "unverified",
+    "value": "Philips XC2011/01"
+   }
+  },
+  "match": {
+   "canonical_id": "203830913",
+   "item_type": "PRODUCT",
+   "name": "Philips XC2011/01",
+   "product_ref": "pr.v1.TEST-0",
+   "url": "https://www.idealo.de/preisvergleich/OffersOfProduct/203830913_-xc2011-01-philips.html"
+  },
+  "reasons": [
+   "idealo product 'Philips XC2011/01': same model and variant",
+   "family: no approved source states a product series for this item"
+  ],
+  "rejected": [
+   {
+    "name": "Ersatzbürste für Philips 3000 Series Akku-Staubsauger, schwarz",
+    "reason": "single shop listing, not a product"
+   },
+   {
+    "name": "Philips XD1111/10",
+    "reason": "different model (not XC2011/01)"
+   }
+  ],
+  "schema_version": "1",
+  "status": "matched",
+  "unknown": [
+   "mpn",
+   "gtin",
+   "family"
+  ],
+  "warnings": [
+   "The page has no structured product data (it may load it with JavaScript); the identity comes from the URL only."
+  ]
+ },
+ "schema_version": "1",
+ "status": "judged",
+ "verdict": {
+  "deal": {
+   "price": 89.99,
+   "product": "Philips XC2011/01",
+   "shop": "philips.de (Home-appliances)",
+   "was_price": null
+  },
+  "headline": "Buy: a real 31% saving, at the 31-day low.",
+  "label": "BUY",
+  "product": {
+   "history": [
+    {
+     "day": "2026-10-28",
+     "price": 146.31
+    },
+    {
+     "day": "2026-10-29",
+     "price": 146.31
+    },
+    {
+     "day": "2026-10-30",
+     "price": 146.31
+    },
+    {
+     "day": "2026-10-31",
+     "price": 146.31
+    },
+    {
+     "day": "2026-11-01",
+     "price": 146.31
+    },
+    {
+     "day": "2026-11-02",
+     "price": 129.99
+    },
+    {
+     "day": "2026-11-03",
+     "price": 129.99
+    },
+    {
+     "day": "2026-11-04",
+     "price": 129.99
+    },
+    {
+     "day": "2026-11-05",
+     "price": 129.99
+    },
+    {
+     "day": "2026-11-06",
+     "price": 129.99
+    },
+    {
+     "day": "2026-11-07",
+     "price": 129.99
+    },
+    {
+     "day": "2026-11-08",
+     "price": 129.99
+    },
+    {
+     "day": "2026-11-09",
+     "price": 129.99
+    },
+    {
+     "day": "2026-11-10",
+     "price": 129.99
+    },
+    {
+     "day": "2026-11-11",
+     "price": 129.99
+    },
+    {
+     "day": "2026-11-12",
+     "price": 129.99
+    },
+    {
+     "day": "2026-11-13",
+     "price": 129.0
+    },
+    {
+     "day": "2026-11-14",
+     "price": 129.0
+    },
+    {
+     "day": "2026-11-15",
+     "price": 129.0
+    },
+    {
+     "day": "2026-11-16",
+     "price": 95.0
+    },
+    {
+     "day": "2026-11-17",
+     "price": 95.0
+    },
+    {
+     "day": "2026-11-18",
+     "price": 95.0
+    },
+    {
+     "day": "2026-11-19",
+     "price": 89.99
+    },
+    {
+     "day": "2026-11-20",
+     "price": 89.99
+    },
+    {
+     "day": "2026-11-21",
+     "price": 89.99
+    },
+    {
+     "day": "2026-11-22",
+     "price": 89.99
+    },
+    {
+     "day": "2026-11-23",
+     "price": 89.99
+    },
+    {
+     "day": "2026-11-24",
+     "price": 89.99
+    },
+    {
+     "day": "2026-11-25",
+     "price": 89.3
+    },
+    {
+     "day": "2026-11-26",
+     "price": 89.3
+    },
+    {
+     "day": "2026-11-27",
+     "price": 89.3
+    }
+   ],
+   "name": "Philips XC2011/01",
+   "offers": [
+    {
+     "in_stock": true,
+     "merchant": "philips.de (Home-appliances)",
+     "observed_at": "2026-11-27T16:56:47.945000Z",
+     "price": 89.99,
+     "shipping": 0.0,
+     "url": "https://www.idealo.de/relocator/relocate?offerKey=TEST0"
+    },
+    {
+     "in_stock": true,
+     "merchant": "kaufland.de",
+     "observed_at": "2026-11-27T16:56:47.945000Z",
+     "price": 95.0,
+     "shipping": 0.0,
+     "url": "https://www.idealo.de/relocator/relocate?offerKey=TEST1"
+    },
+    {
+     "in_stock": true,
+     "merchant": "joybuy.de",
+     "observed_at": "2026-11-27T16:56:47.945000Z",
+     "price": 125.99,
+     "shipping": 0.0,
+     "url": "https://www.idealo.de/relocator/relocate?offerKey=TEST2"
+    },
+    {
+     "in_stock": true,
+     "merchant": "proshop.de",
+     "observed_at": "2026-11-27T16:56:47.945000Z",
+     "price": 188.69,
+     "shipping": 4.99,
+     "url": "https://www.idealo.de/relocator/relocate?offerKey=TEST3"
+    }
+   ],
+   "product_id": "pr.v1.TEST-0",
+   "retrieved_at": "2026-11-27T17:00:00Z",
+   "source": "idealo",
+   "url": "https://www.idealo.de/preisvergleich/OffersOfProduct/203830913_-xc2011-01-philips.html"
+  },
+  "reasons": [
+   {
+    "code": "real_saving",
+    "evidence": [
+     {
+      "metric": "deal price",
+      "source": "user",
+      "value": 89.99,
+      "window": null
+     },
+     {
+      "metric": "median daily lowest price, 30 days",
+      "source": "idealo",
+      "value": 129.5,
+      "window": "2026-10-29..2026-11-27"
+     }
+    ],
+    "polarity": "for",
+    "text": "Real saving: 31% below the typical price of the last 30 days (€129.50)."
+   },
+   {
+    "code": "at_90_day_low",
+    "evidence": [
+     {
+      "metric": "deal price",
+      "source": "user",
+      "value": 89.99,
+      "window": null
+     },
+     {
+      "metric": "lowest price, 31 days",
+      "source": "idealo",
+      "value": 89.3,
+      "window": "2026-10-28..2026-11-27"
+     }
+    ],
+    "polarity": "for",
+    "text": "At or near the lowest price of the last 31 days (€89.30)."
+   }
+  ],
+  "stats": {
+   "low_30": 89.3,
+   "low_90": 89.3,
+   "max_90": 146.31,
+   "median_30": 129.5,
+   "real_saving": 0.3051,
+   "reference_price": 129.5
+  }
+ },
+ "warnings": [
+  "The page has no structured product data (it may load it with JavaScript); the identity comes from the URL only."
+ ],
+ "was": null
+}
