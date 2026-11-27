@@ -1,6 +1,6 @@
 # BOB-URL-001: URL-to-Product Intelligence
 
-Status: M1–M4 done (27 Nov 2026); next M5. Priority: P0. Owner: product (chadha); implementation: Claude Code.
+Status: M1–M5 done (27 Nov 2026); next M6. Priority: P0. Owner: product (chadha); implementation: Claude Code.
 
 A shopper pastes a product URL. Buy or Bye validates it, extracts what the page and URL say
 about the product, identifies the exact product on idealo, compares market prices and price
@@ -97,6 +97,28 @@ when the category is unknown.
 
 Shop matching now understands idealo merchant names such as `philips.de (Home-appliances)`, so
 the link pre-fill finds the same-shop offer (€89.99 live).
+
+## M5 results (verified live, 27 Nov 2026)
+`POST /api/v1/product-url/check` on the XC2011_01 URL: judged **BUY** ("a real 31% saving, at
+the 30-day low"). Deal price €89.99 from idealo's current offer by `philips.de
+(Home-appliances)` (the Philips page states no price), shipping €0.00 stated separately;
+history 31 days (2026-10-28..2026-11-27), 4 offers. Cost: 4 idealo calls (search, details,
+history, offers): the M4 match is reused, nothing is searched twice, the page is read once.
+
+- Every price is a `PriceObservation`: kind, amount, currency, seller, market, source
+  (`shop_page` or `idealo`), source URL, observed time, shipping cost and whether it is
+  included (`None` = not stated, never assumed). idealo statistics carry a `MarketProvenance`
+  block (product ID and URL, market, currency, retrieval time, history window, offer count).
+- Deal price: the shop page's own price first, else idealo's offer from the same shop; no
+  price, no verdict. The "was" price only ever comes from the shop page.
+- Only a "matched" identity gets market data and a label. An unresolved product with a price
+  gets NOT_ENOUGH_DATA from `verdict.decide` itself.
+- `verdict.decide` is called exactly as `/api/check` calls it (tested for identical results).
+- idealo units are explicit: history strings are read as written, details trends are integer
+  cents only when the caller says so. The old "integer above 1000 is cents" guess is gone.
+- idealo's offer `freshness` is passed through as `observed_at`, separate from our
+  `retrieved_at`. It is a real "last seen" time (36 and 60 minutes old in two live samples),
+  so the UI must not present these prices as live.
 
 ## Example (test expectation, not a hard-coded rule)
 

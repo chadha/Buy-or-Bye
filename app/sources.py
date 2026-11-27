@@ -174,18 +174,25 @@ class IdealoMCPSource:
         hit = best_result(found, query, self.min_match)
         if hit is None:
             return None
-        ref = hit["productRef"]
-        args = {"productRef": ref, "country": self.country}
+        return await self.market_data(
+            str(hit["productRef"]), str(hit.get("name") or query), hit.get("url")
+        )
+
+    async def market_data(self, product_ref: str, name: str, url: str | None) -> ProductData:
+        """30-day history and current offers for an already identified product (2 calls).
+        The URL flow passes its resolved match here, so it never searches twice."""
+        args = {"productRef": product_ref, "country": self.country}
         hist, offers = await self._call_many(
             [(self.tools["history"], args), (self.tools["offers"], {**args, "offset": 0})]
         )
         return ProductData(
-            product_id=str(ref),
-            name=str(hit.get("name") or query),
-            url=hit.get("url"),
+            product_id=product_ref,
+            name=name,
+            url=url,
             history=history_from_idealo(hist),
             offers=offers_from_idealo(offers),
             source="idealo",
+            retrieved_at=datetime.now(UTC),
         )
 
     async def search(self, query: str, purpose: Purpose = "identity") -> list[SearchHit]:
@@ -465,12 +472,21 @@ def best_result(found: Any, query: str, min_match: float = 0.6) -> dict[str, Any
     return best if score >= min_match else None
 
 
-def history_from_idealo(raw: Any) -> list[PricePoint]:
-    """priceTrend.history -> one PricePoint per day (lowest price of that day), oldest first."""
+def history_from_idealo(raw: Any, integer_cents: bool = False) -> list[PricePoint]:
+    """priceTrend.history -> one PricePoint per day (lowest price of that day), oldest first.
+
+    get_product_price_history gives price strings ("146,31 €"); the trend inside
+    get_product_details gives integers in cents (14631). The caller states which one it
+    passes (`integer_cents`): the unit is never guessed from the size of the number.
+    """
     trend = (raw or {}).get("priceTrend") or {}
     by_day: dict[date, Decimal] = {}
     for h in trend.get("history") or []:
-        price = parse_price(h.get("price"))
+        value = h.get("price")
+        if integer_cents and isinstance(value, int) and not isinstance(value, bool):
+            price: Decimal | None = cents(Decimal(value) / 100)
+        else:
+            price = parse_price(value)
         iso = h.get("dateTimeISO")
         if price is None:
             continue
@@ -482,15 +498,14 @@ def history_from_idealo(raw: Any) -> list[PricePoint]:
             day = datetime.fromtimestamp(h["dateTime"] / 1000, tz=UTC).date()
         else:
             continue
-        # get_product_details reports cents as integers; the history tool reports strings.
-        if isinstance(h.get("price"), int) and h["price"] > 1000 and price > 1000:
-            price = cents(price / 100)
         by_day[day] = min(price, by_day.get(day, price))
     return [PricePoint(day=d, price=p) for d, p in sorted(by_day.items())]
 
 
 def offers_from_idealo(raw: Any) -> list[Offer]:
-    """offers[] -> Offer(merchant, item price). Shipping is excluded to match the shop's tag."""
+    """offers[] -> Offer: item price (as the shop tags it), shipping cost when idealo states
+    it (`minShippingCost`; otherwise unknown, never 0) and idealo's observation time
+    (`freshness`)."""
     out: list[Offer] = []
     for o in (raw or {}).get("offers") or []:
         price = parse_price(o.get("price"))
@@ -498,8 +513,27 @@ def offers_from_idealo(raw: Any) -> list[Offer]:
         name = shop.get("name") or shop.get("merchantName")
         if price is None or not name:
             continue
-        out.append(Offer(merchant=str(name), price=price, url=o.get("relocatorUrl")))
+        ship = o.get("minShippingCost")
+        out.append(
+            Offer(
+                merchant=str(name),
+                price=price,
+                url=o.get("relocatorUrl"),
+                shipping=parse_price(ship) if isinstance(ship, str) else None,
+                observed_at=_utc(o.get("freshness")),
+            )
+        )
     return out
+
+
+def _utc(value: Any) -> datetime | None:
+    if not isinstance(value, str):
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return parsed.astimezone(UTC) if parsed.tzinfo else None
 
 
 def make_source() -> PriceSource:

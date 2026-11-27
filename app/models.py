@@ -5,7 +5,7 @@ and a plain JSON number at the API edge, so existing clients see the same JSON. 
 from __future__ import annotations
 
 import math
-from datetime import date
+from datetime import date, datetime
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from enum import StrEnum
 from typing import Annotated, Any, Literal
@@ -69,9 +69,11 @@ class PricePoint(BaseModel):
 
 class Offer(BaseModel):
     merchant: str
-    price: Money  # total incl. shipping where known
+    price: Money  # the item price as the shop lists it, without shipping
     in_stock: bool = True
     url: str | None = None
+    shipping: Money | None = None  # lowest shipping cost; None = unknown (never assumed 0)
+    observed_at: datetime | None = None  # when the price source last saw this offer (UTC)
 
 
 class ProductData(BaseModel):
@@ -81,6 +83,22 @@ class ProductData(BaseModel):
     history: list[PricePoint]  # daily lowest price, oldest first
     offers: list[Offer]  # current offers
     source: Literal["idealo", "demo"]
+    retrieved_at: datetime | None = None  # when Buy or Bye fetched this data (UTC)
+
+
+class PriceObservation(BaseModel):
+    """One price with its provenance (CLAUDE.md: source, time, currency, market, seller)."""
+
+    kind: Literal["deal_price", "claimed_was_price", "offer"]
+    amount: Money
+    currency: str
+    seller: str | None = None
+    market: str | None = None
+    source: Literal["shop_page", "idealo"]
+    source_url: str | None = None
+    observed_at: datetime | None = None  # UTC
+    shipping_cost: Money | None = None  # None = not stated by the source
+    shipping_included: bool | None = None  # None = unknown
 
 
 class Deal(BaseModel):

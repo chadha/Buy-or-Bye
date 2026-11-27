@@ -1,0 +1,78 @@
+{
+ "_note": "Recorded live 2026-11-27 from mcp.idealo.com get_product_offers (Philips XC2011/01, DE); relocator links replaced, payment details dropped.",
+ "nextOffset": 5,
+ "offers": [
+  {
+   "price": "89,99 €",
+   "shop": {
+    "shopId": "336674",
+    "name": "philips.de (Home-appliances)",
+    "isMarketplace": false
+   },
+   "delivery": {
+    "deliveryText": "Di. 01.12.–Mi. 02.12.2026",
+    "deliveryStatus": "SHORT",
+    "earlyDeliveryDate": "2026-12-01",
+    "lateDeliveryDate": "2026-12-02"
+   },
+   "minShippingCost": "0,00 €",
+   "hasAlwaysFreeShipping": true,
+   "freshness": "2026-11-27T16:56:47.945Z",
+   "relocatorUrl": "https://www.idealo.de/relocator/relocate?offerKey=TEST0"
+  },
+  {
+   "price": "95,00 €",
+   "shop": {
+    "shopId": "26895",
+    "name": "kaufland.de",
+    "isMarketplace": true
+   },
+   "delivery": {
+    "deliveryText": "Di. 01.12.–Mi. 02.12.2026",
+    "deliveryStatus": "MEDIUM",
+    "earlyDeliveryDate": "2026-12-01",
+    "lateDeliveryDate": "2026-12-02"
+   },
+   "minShippingCost": "0,00 €",
+   "hasAlwaysFreeShipping": true,
+   "freshness": "2026-11-27T16:56:47.945Z",
+   "relocatorUrl": "https://www.idealo.de/relocator/relocate?offerKey=TEST1"
+  },
+  {
+   "price": "125,99 €",
+   "shop": {
+    "shopId": "335764",
+    "name": "joybuy.de",
+    "isMarketplace": false
+   },
+   "delivery": {
+    "deliveryText": "bis Mo. 30.11.2026",
+    "deliveryStatus": "SHORT",
+    "earlyDeliveryDate": null,
+    "lateDeliveryDate": "2026-11-30"
+   },
+   "minShippingCost": "0,00 €",
+   "hasAlwaysFreeShipping": true,
+   "freshness": "2026-11-27T16:56:47.945Z",
+   "relocatorUrl": "https://www.idealo.de/relocator/relocate?offerKey=TEST2"
+  },
+  {
+   "price": "188,69 €",
+   "shop": {
+    "shopId": "302342",
+    "name": "proshop.de",
+    "isMarketplace": false
+   },
+   "delivery": {
+    "deliveryText": "Mo. 07.12.–Do. 10.12.2026",
+    "deliveryStatus": "LONG",
+    "earlyDeliveryDate": "2026-12-07",
+    "lateDeliveryDate": "2026-12-10"
+   },
+   "minShippingCost": "4,99 €",
+   "hasAlwaysFreeShipping": false,
+   "freshness": "2026-11-27T16:56:47.945Z",
+   "relocatorUrl": "https://www.idealo.de/relocator/relocate?offerKey=TEST3"
+  }
+ ]
+}

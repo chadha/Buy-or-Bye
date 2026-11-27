@@ -110,7 +110,8 @@ def test_idealo_mapping_returns_decimal():
                     {"dateTimeISO": "2026-11-02T00:00:00Z", "price": 105900},
                 ]
             }
-        }
+        },
+        integer_cents=True,  # M5: the unit is declared by the caller, never guessed
     )
     assert [p.price for p in hist] == [Decimal("1059.00"), Decimal("1059.00")]
     offers = offers_from_idealo({"offers": [{"price": "89,99 €", "shop": {"name": "philips.de"}}]})

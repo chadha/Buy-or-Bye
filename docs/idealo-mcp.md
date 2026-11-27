@@ -7,8 +7,8 @@ The samples there are illustrative; verify against a live call before relying on
 | Tool | Parameters | Fields we use | Notes |
 |---|---|---|---|
 | `search_products` | `query`, `country` (DE) | `results[].productRef`, `name`, `url`, `itemType` | `productRef` is opaque and short-lived |
-| `get_product_price_history` | `productRef`, `country` | `priceTrend.history[].dateTimeISO`, `.price` ("1.059,00 €") | 30 days, daily; `priceTrend: null` when no history |
-| `get_product_offers` | `productRef`, `country`, `offset` | `offers[].shop.name`, `.price`, `.relocatorUrl` | 5 per page; Trial caps at 10 per product |
+| `get_product_price_history` | `productRef`, `country` | `priceTrend.history[].dateTimeISO`, `.price` ("146,31 €", a string) | 30 days, daily; `priceTrend: null` when no history; verified live 2026-11-27 (also `statistics`, `dataSourceConfidence`) |
+| `get_product_offers` | `productRef`, `country`, `offset` | `offers[].shop.name`, `.price` (item price), `.minShippingCost`, `.freshness` (last seen, UTC), `.relocatorUrl` | 5 per page; Trial caps at 10 per product; verified live 2026-11-27 |
 | `get_product_details` | `productRef` (required), `country`, `type` (CLUSTER/PRODUCT/SINGLE_OFFER, from search `itemType`) | `name`, `url`, `productSpecification.groups[].attributes[]`, `productOverview[]` | verified live 2026-11-27, see below |
 
 ## `get_product_details`: verified schema (BOB-URL-001 M3)

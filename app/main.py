@@ -17,6 +17,7 @@ from .models import Deal, Verdict
 from .product_identity import UrlIdentityReport, UrlValidationError, identify_product_url
 from .shop_page import prices_for_link
 from .sources import PriceSource, SourceError, make_source
+from .url_check import UrlCheckReport, check_product_url
 from .verdict import decide
 
 log = logging.getLogger("buy_or_bye")
@@ -100,6 +101,30 @@ async def resolve_product(req: IdentifyRequest) -> Resolution:
             reasons=["demo mode is offline: idealo was not searched"],
         )
     return await resolve_identity(report, source)  # type: ignore[arg-type]
+
+
+@app.post("/api/v1/product-url/check")
+async def check_product(req: IdentifyRequest) -> UrlCheckReport:
+    """BOB-URL-001 M5: judge the product behind a URL against idealo market data. Every price
+    in the report carries its provenance; the label comes from verdict.decide, unchanged."""
+    offline = source.name == "demo" or not hasattr(source, "market_data")
+    try:
+        if offline:
+            report = await identify_product_url(req.url, offline=True)
+        else:
+            return await check_product_url(req.url, source)  # type: ignore[arg-type]
+    except UrlValidationError as exc:
+        raise HTTPException(422, {"code": exc.code, "message": exc.message}) from exc
+    return UrlCheckReport(
+        status="unavailable",
+        reasons=["demo mode is offline: idealo was not searched"],
+        resolution=Resolution(
+            status="unavailable",
+            identity=report.identity,
+            identification=report,
+            reasons=["demo mode is offline"],
+        ),
+    )
 
 
 @app.post("/api/check")
