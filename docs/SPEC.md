@@ -11,8 +11,11 @@ A shopper looking at one deal can't check that in the moment.
 One shopper, one deal, on a phone or laptop: in a shop, in an ad, or on a product page.
 
 ## Flow
-1. **Input:** paste a link, type the deal, or take a photo of a price tag or ad.
-2. **Confirm:** the app fills product, price, "was" price and shop; the shopper corrects them.
+1. **Input:** paste the product link or take a photo of a price tag or ad. There are no
+   manual price fields.
+2. **Read:** the app reads product, price, "was" price and shop from the shop page (or
+   idealo's current offer from that same shop, or the photo) and shows what it found and
+   where it came from. No price found → no verdict; the app asks for a photo instead.
 3. **Verdict:** BUY, BYE, WAIT or "not enough data", a price-history chart and one line per
    reason, each with the numbers it used and where they came from.
 

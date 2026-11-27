@@ -8,13 +8,14 @@ Shared rules for every coding agent (Claude Code, Cursor, Codex) and every human
 Procedures live in `.claude/skills/`; this file only holds what applies to every task.
 
 ## Product
-A mobile-first web app: the shopper gives a deal (text, link or photo), confirms the fields, and
+A mobile-first web app: the shopper gives a deal (link or photo), sees what was read from it, and
 gets **BUY / BYE / WAIT** (or "not enough data") judged against idealo price history, with the
 numbers behind each reason. Spec: `docs/SPEC.md`.
 
 ## Rules (IMPORTANT: every change must keep these true)
 1. **No invented numbers.** Every price, date or discount shown comes from the price source
-   or from the shopper's confirmed input, and each `Evidence` says which.
+   or from the deal itself (shop page, idealo's offer from that shop, or the shopper's photo),
+   and each `Evidence` says which. "What we found" shows the deal numbers and their source.
 2. **Code decides the label.** Only `app/verdict.py` sets a `Label`. An LLM may read photos
    (`app/extract.py`) but never judges a deal.
 3. **No data, no verdict.** Unknown product or thin history returns `NOT_ENOUGH_DATA`.

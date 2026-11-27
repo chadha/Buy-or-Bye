@@ -65,8 +65,8 @@ def parse_text(text: str) -> Extracted:
         return Extracted(
             product=" ".join(words)[:120] or None,
             shop=shop,
-            note="We only read the product from a link. Please type the deal price "
-            "and the claimed 'was' price from the shop page.",
+            note="We only read the product from a link here. Take a photo of the price "
+            "to check the deal.",
         )
 
     prices: list[tuple[float, bool]] = []
@@ -113,7 +113,7 @@ async def parse_photo(image: bytes, mime: str) -> Extracted:
     if not (key and base and model):
         return Extracted(
             note="Photo reading isn't configured (LLM_API_KEY, LLM_BASE_URL, "
-            "LLM_VISION_MODEL). Please type the details instead."
+            "LLM_VISION_MODEL). Please paste the product link instead."
         )
     data_uri = f"data:{mime};base64,{base64.b64encode(image).decode()}"
     payload = {

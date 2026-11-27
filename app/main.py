@@ -58,9 +58,9 @@ async def extract_photo(photo: UploadFile = PHOTO) -> Extracted:
         raise HTTPException(415, "Please upload an image.")
     try:
         return await parse_photo(data, photo.content_type or "image/jpeg")
-    except Exception:  # noqa: BLE001 - surfaced to the user as "type it instead"
+    except Exception:  # noqa: BLE001 - surfaced to the user as "paste the link instead"
         log.exception("photo extraction failed")
-        return Extracted(note="We couldn't read the photo. Please type the details.")
+        return Extracted(note="We couldn't read the photo. Try a sharper photo of the price tag.")
 
 
 @app.post("/api/check")

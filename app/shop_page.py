@@ -9,7 +9,7 @@ Rules (see docs/shop-pages.md):
   they are ambiguous (shipping, accessories, ads) and the page is untrusted content.
 * idealo is used only for the SAME shop's current offer. Another shop's price is never put
   into the deal price field.
-* Everything here is a pre-fill. The shopper confirms or edits every field before a verdict.
+* The page shows what was read and where it came from ("What we found"). No price, no verdict.
 """
 
 from __future__ import annotations
@@ -325,8 +325,8 @@ async def prices_for_link(
             price=page.price,
             was_price=page.was_price,
             shop=base.shop,
-            note="Prices read from the shop page's product data. Please check them"
-            + ("." if page.was_price else ", and type the claimed 'was' price if there is one."),
+            note="Prices read from the shop page's product data"
+            + ("." if page.was_price else "; the page shows no claimed 'was' price."),
         )
 
     if source is not None and product and base.shop:
@@ -352,14 +352,12 @@ async def prices_for_link(
                 price=offer.price,
                 shop=base.shop,
                 note=f"Price from idealo's current offer for {base.shop} (the shop page had "
-                "no readable price). Please check it, and type the claimed 'was' price if "
-                "there is one.",
+                "no readable price data).",
             )
 
     return Extracted(
         product=product,
         shop=base.shop,
         note=f"We couldn't read prices for {shop}: its page has no readable price data and "
-        "idealo lists no offer from this shop. Please type the deal price and the claimed "
-        "'was' price.",
+        "idealo lists no offer from this shop.",
     )

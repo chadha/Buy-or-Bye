@@ -50,10 +50,10 @@ def test_index_and_health():
     assert client.get("/healthz").json()["ok"] == "true"
 
 
-def test_photo_without_llm_config_asks_user_to_type(monkeypatch):
+def test_photo_without_llm_config_asks_for_the_link(monkeypatch):
     monkeypatch.delenv("LLM_API_KEY", raising=False)
     r = client.post("/api/extract/photo", files={"photo": ("t.jpg", b"\xff\xd8\xff", "image/jpeg")})
-    assert r.status_code == 200 and "type the details" in r.json()["note"]
+    assert r.status_code == 200 and "paste the product link" in r.json()["note"]
 
 
 def test_non_image_upload_is_rejected():

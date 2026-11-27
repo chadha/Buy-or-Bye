@@ -10,17 +10,19 @@ Code: `app/shop_page.py`. Tests: `tests/test_shop_page.py` (no network).
 2. **idealo fallback.** If the page has no readable price, idealo is searched for the product
    and the current offer **from the same shop** is used (`merchant_matches`). Another shop's
    price is never put in the deal price field.
-3. **Typing.** Otherwise the shopper types the prices.
+3. **Photo.** Otherwise the shopper is asked to photograph the price.
 
-Every value is a pre-fill: the shopper confirms or edits it before `/api/check` judges the
-deal against idealo price history. Demo mode (`PRICE_SOURCE=demo`) never fetches links.
+The page shows what was found and its source ("What we found"), then `/api/check` judges
+the deal against idealo price history. There are no manual price fields: no price found
+means no verdict, and the shopper is asked for a photo. Demo mode (`PRICE_SOURCE=demo`)
+never fetches links.
 
 ## Terms, allowed use and limits (AGENTS.md: new data source record)
 | Item | Rule |
 |---|---|
 | Allowed use | Read one public product page the shopper explicitly pasted, on their request. No crawling, no follow-up links, no stored copies. |
 | robots.txt | Fetched first; a disallowed page is not read. 4xx/3xx = no robots.txt; 5xx or network error = not read. User-agent token `BuyOrBye`. |
-| Access | No logins, cookies, CAPTCHAs, paywalls or JavaScript rendering. Shops whose prices load only via JavaScript (e.g. home-appliances.philips) fall back to idealo or typing. |
+| Access | No logins, cookies, CAPTCHAs, paywalls or JavaScript rendering. Shops whose prices load only via JavaScript (e.g. home-appliances.philips) fall back to idealo or a photo. |
 | Data fields | Product name, price, strikethrough price, currency. Free page text is ignored (untrusted, ambiguous). |
 | Rate | One page + one robots.txt per paste, no retries. idealo fallback costs 3 idealo calls. |
 | Freshness | Read at paste time; nothing is cached. |

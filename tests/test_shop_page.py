@@ -365,7 +365,7 @@ async def test_other_shops_offers_are_never_used_as_the_deal_price():
     )
     assert (x.price, x.was_price) == (None, None)
     assert x.product == "HD9285"
-    assert "type" in x.note.lower()
+    assert "couldn't read prices" in x.note
 
 
 async def test_page_error_still_tries_idealo_and_never_raises():
@@ -381,7 +381,7 @@ async def test_unexpected_idealo_exception_falls_back_to_typing():
 
     x = await prices_for_link("https://shop.example/p/kettle", Exploding(None), fetch=page_empty)
     assert (x.price, x.was_price) == (None, None)
-    assert "type" in x.note.lower()
+    assert "couldn't read prices" in x.note
 
 
 async def test_idealo_error_falls_back_to_typing():
