@@ -60,7 +60,8 @@ def parse_text(text: str) -> Extracted:
             and not re.fullmatch(r"\d{4,}[a-z0-9]*", w.lower())
             and w.lower() not in {"html", "dp", "p", "product", "produkt", "de", "en"}
         ]
-        shop = parts.netloc.removeprefix("www.").split(".")[0] or None
+        # Keep the whole host: brand domains like home-appliances.philips lose meaning when cut.
+        shop = (parts.hostname or "").removeprefix("www.") or None
         return Extracted(
             product=" ".join(words)[:120] or None,
             shop=shop,

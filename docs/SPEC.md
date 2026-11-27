@@ -32,7 +32,9 @@ One shopper, one deal, on a phone or laptop: in a shop, in an ad, or on a produc
 low. Everything else → WAIT.
 
 ## Out of scope (Friday)
-Accounts, price alerts that buy, browser extension, native app, scraping shop pages.
+Accounts, price alerts that buy, browser extension, native app, crawling or scraping shop
+pages. Reading the one page a shopper pastes (structured data only, robots.txt honoured) is
+in scope: see `docs/shop-pages.md`.
 
 ## Verification
 `make check` passes; `make demo` shows ✓ for all five demo deals; with `PRICE_SOURCE=idealo`,

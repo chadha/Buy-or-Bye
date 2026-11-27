@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from datetime import date, timedelta
 from importlib import resources
 
@@ -11,6 +12,7 @@ from fastapi.responses import HTMLResponse
 
 from .extract import Extracted, parse_photo, parse_text
 from .models import Deal, Verdict
+from .shop_page import prices_for_link
 from .sources import PriceSource, SourceError, make_source
 from .verdict import decide
 
@@ -40,7 +42,11 @@ async def index() -> str:
 
 @app.post("/api/extract/text")
 async def extract_text(body: dict[str, str]) -> Extracted:
-    return parse_text(body.get("text", "")[:2000])
+    text = body.get("text", "")[:2000].strip()
+    # Live mode only: demo mode stays fully offline.
+    if source.name != "demo" and re.match(r"https?://", text):
+        return await prices_for_link(text, source)
+    return parse_text(text)
 
 
 @app.post("/api/extract/photo")

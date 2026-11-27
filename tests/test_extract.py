@@ -49,6 +49,18 @@ def test_space_as_thousands_separator_still_works():
     assert (x.price, x.was_price) == (1049.0, 1199.0)
 
 
+@pytest.mark.parametrize(
+    "url,shop",
+    [
+        ("https://www.home-appliances.philips/de/de/p/HD9285-90", "home-appliances.philips"),
+        ("https://www.amazon.de/dp/B09XS7JWHH", "amazon.de"),
+        ("https://Shop.Example.com:8443/item", "shop.example.com"),
+    ],
+)
+def test_link_keeps_the_whole_shop_domain(url, shop):
+    assert parse_text(url).shop == shop
+
+
 def test_link_asks_for_the_prices():
     x = parse_text("https://www.amazon.de/dp/B09XS7JWHH")
     assert (x.price, x.was_price) == (None, None)
@@ -57,7 +69,7 @@ def test_link_asks_for_the_prices():
 
 def test_link_gives_product_words_and_shop():
     x = parse_text("https://www.example-shop.de/produkt/nordwind-anc-headphones-h7-12345.html")
-    assert x.shop == "example-shop"
+    assert x.shop == "example-shop.de"
     assert x.product is not None and "nordwind anc headphones h7" in x.product.lower()
 
 
