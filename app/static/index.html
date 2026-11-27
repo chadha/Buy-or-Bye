@@ -57,6 +57,7 @@
   .ev { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
   .hidden { display: none; }
   .err { color: var(--bye); font-weight: 600; }
+  input[aria-invalid="true"] { border-color: var(--bye); outline-color: var(--bye); }
 </style>
 </head>
 <body>
@@ -102,11 +103,20 @@ const eur = (v) => "€" + Number(v).toLocaleString("en", {minimumFractionDigits
 const NAMES = {BUY: "BUY", BYE: "BYE", WAIT: "WAIT", NOT_ENOUGH_DATA: "Not enough data"};
 
 function fill(x) {
-  if (x.product) $("#product").value = x.product;
-  if (x.price) $("#price").value = x.price;
+  // Replace extracted values deliberately, including clearing fields that were not detected.
+  $("#product").value = x.product ?? "";
+  $("#price").value = x.price ?? "";
   $("#was").value = x.was_price ?? "";
   $("#shop").value = x.shop ?? "";
-  $("#hint").textContent = x.note || "Check these details, then judge the deal.";
+  for (const field of ["#product", "#price", "#was"]) $(field).removeAttribute("aria-invalid");
+  const missing = [];
+  if (!x.product) missing.push("product");
+  if (x.price == null || x.price === "") missing.push("deal price");
+  $("#hint").textContent = missing.length
+    ? (x.note ? x.note + " " : "") + "Couldn't detect " + missing.join(" and ") + ". Please enter " + (missing.length === 1 ? "it" : "them") + " below. The claimed “was” price is optional."
+    : x.note || "Check these details, then judge the deal.";
+  $("#deal").scrollIntoView({behavior: "smooth", block: "nearest"});
+  if (missing.length) $(missing.includes("deal price") ? "#price" : "#product").focus({preventScroll: true});
 }
 
 fetch("/healthz").then(r => r.json()).then(h => {
@@ -126,17 +136,32 @@ fetch("/healthz").then(r => r.json()).then(h => {
 });
 
 $("#read").onclick = async () => {
-  const r = await fetch("/api/extract/text", {method: "POST", headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({text: $("#free").value})});
-  fill(await r.json());
+  const text = $("#free").value.trim();
+  if (!text) { $("#hint").textContent = "Paste a product link or deal description first."; $("#free").focus(); return; }
+  $("#hint").textContent = "Reading the deal…";
+  try {
+    const r = await fetch("/api/extract/text", {method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({text})});
+    if (!r.ok) throw new Error("Extraction failed. Please enter the details manually.");
+    fill(await r.json());
+  } catch (error) {
+    $("#hint").textContent = error.message || "Couldn't read the deal. Please enter the details manually.";
+  }
 };
 
 $("#photo").onchange = async (e) => {
   const f = e.target.files[0]; if (!f) return;
   $("#hint").textContent = "Reading the photo…";
   const fd = new FormData(); fd.append("photo", f);
-  const r = await fetch("/api/extract/photo", {method: "POST", body: fd});
-  fill(r.ok ? await r.json() : {note: "We couldn't read the photo. Please type the details."});
+  try {
+    const r = await fetch("/api/extract/photo", {method: "POST", body: fd});
+    if (!r.ok) throw new Error("We couldn't read the photo. Please type the details.");
+    fill(await r.json());
+  } catch (error) {
+    $("#hint").textContent = error.message || "We couldn't read the photo. Please type the details.";
+  } finally {
+    e.target.value = "";
+  }
 };
 
 function chart(v) {
@@ -182,7 +207,19 @@ $("#deal").onsubmit = async (e) => {
   e.preventDefault();
   const body = {product: $("#product").value.trim(), price: num($("#price").value),
                 was_price: num($("#was").value), shop: $("#shop").value.trim() || null};
-  if (!body.price) { $("#hint").textContent = "Please enter the deal price."; return; }
+  const missing = [];
+  if (body.product.length < 2) missing.push("#product");
+  if (!body.price) missing.push("#price");
+  for (const field of ["#product", "#price", "#was"]) {
+    const invalid = missing.includes(field) || (field === "#was" && $("#was").value.trim() && !num($("#was").value));
+    $(field).setAttribute("aria-invalid", String(invalid));
+  }
+  if (missing.length || ($("#was").value.trim() && !body.was_price)) {
+    $("#hint").textContent = "Enter a product name and a valid deal price. The claimed “was” price is optional, but must be a positive amount when provided.";
+    $(missing[0] || "#was").focus();
+    return;
+  }
+  $("#hint").textContent = "Checking price history…";
   $("#out").classList.remove("hidden"); $("#out").innerHTML = `<p class="note">Checking price history…</p>`;
   const r = await fetch("/api/check", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
   if (!r.ok) { const err = await r.json().catch(() => ({})); $("#out").innerHTML = `<p class="err">${esc(err.detail || "Something went wrong.")}</p>`; return; }
