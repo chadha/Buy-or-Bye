@@ -1,6 +1,6 @@
 # BOB-URL-001: URL-to-Product Intelligence
 
-Status: M1–M5 done (27 Nov 2026); next M6. Priority: P0. Owner: product (chadha); implementation: Claude Code.
+Status: M1–M6 done (27 Nov 2026). Feature complete for the demo slice; see open risks. Priority: P0. Owner: product (chadha); implementation: Claude Code.
 
 A shopper pastes a product URL. Buy or Bye validates it, extracts what the page and URL say
 about the product, identifies the exact product on idealo, compares market prices and price
@@ -119,6 +119,17 @@ history, offers): the M4 match is reused, nothing is searched twice, the page is
 - idealo's offer `freshness` is passed through as `observed_at`, separate from our
   `retrieved_at`. It is a real "last seen" time (36 and 60 minutes old in two live samples),
   so the UI must not present these prices as live.
+
+## M6 results
+- The page sends a pasted link (live mode) to `/api/v1/product-url/check` and shows "What we
+  found": each identity fact with its source and status in words (verified / one source /
+  sources disagree), the deal price with seller, shipping and "last seen by idealo … ago",
+  the claimed "was" price or "none stated by the shop", facts no source states, the market
+  data window, and all current offers. A price idealo last saw is labelled as not live.
+- Demo mode, plain text and photos keep the offline path, so `make demo` and the demo chips
+  still work without idealo.
+- `tests/test_golden_url_check.py` pins the full XC2011/01 report built from live recordings
+  (`scripts/make_golden_url_check.py`).
 
 ## Example (test expectation, not a hard-coded rule)
 

@@ -59,7 +59,9 @@ pip install -e ".[dev,idealo]"
 make idealo-login Q="sony wh-1000xm5"   # browser sign-in once, then probes one product
 make live                              # the web app on live idealo data
 ```
-Mapping and limits: `docs/idealo-mcp.md`.
+Mapping and limits: `docs/idealo-mcp.md`. In live mode a pasted product link goes through
+`POST /api/v1/product-url/check` (identity, idealo match, provenance, verdict): see
+`docs/bob-url-001.md`. idealo calls are capped per day (`IDEALO_DAILY_LIMIT`, max 500).
 
 ### Buy or Bye inside Claude (conversational commerce)
 Run Buy or Bye as an MCP server so Claude can answer "is this discount real?" in a chat.

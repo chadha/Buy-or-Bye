@@ -57,6 +57,19 @@
   .ev { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
   .hidden { display: none; }
   .err { color: var(--bye); font-weight: 600; }
+  dl.facts { display: grid; grid-template-columns: max-content 1fr; gap: 6px 12px; margin: 10px 0 0; }
+  dl.facts dt { color: var(--muted); font-size: 13px; padding-top: 2px; }
+  dl.facts dd { margin: 0; }
+  .src { display: block; font-size: 12.5px; color: var(--muted); }
+  .st { font-size: 11.5px; font-weight: 700; padding: 1px 7px; border-radius: 99px; margin-left: 6px;
+        white-space: nowrap; border: 1px solid currentColor; }
+  .st.verified { color: var(--buy); } .st.contradicted { color: var(--bye); }
+  .st.unverified { color: var(--muted); }
+  ul.offers { list-style: none; padding: 0; margin: 6px 0 0; font-size: 14px; }
+  ul.offers li { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0;
+                 border-top: 1px solid var(--line); }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
+       margin: 14px 0 0; }
 </style>
 </head>
 <body>
@@ -130,7 +143,97 @@ async function judge(x) {
   render(await r.json());
 }
 
+// --- URL check (BOB-URL-001): identity, provenance, shipping and freshness ---------------------
+// Live mode sends a pasted link to /api/v1/product-url/check. Every value shown says where it
+// came from; statuses are written out, not shown by colour alone. Prices last seen by idealo
+// are never presented as live.
+let LIVE = false;
+const isUrl = (t) => /^https?:\/\/\S+$/i.test(t);
+const SOURCE = {json_ld: "shop page", meta: "shop page", shop_page: "shop page", url_path: "link",
+                url_host: "shop address", idealo: "idealo"};
+const STATUS = {verified: "verified", unverified: "one source", contradicted: "sources disagree"};
+const FIELDS = [["name", "Product"], ["brand", "Brand"], ["model", "Model"], ["category", "Type"],
+                ["market", "Market"]];
+const UNKNOWN = {family: "product series", gtin: "barcode (GTIN)", mpn: "maker’s part number",
+                 currency: "currency", category: "product type", brand: "brand"};
+
+function ago(iso) {
+  if (!iso) return null;
+  const min = Math.round((Date.now() - Date.parse(iso)) / 60000);
+  if (!isFinite(min)) return null;
+  if (min < 1) return "just now";
+  if (min < 60) return `${min} min ago`;
+  const h = Math.round(min / 60);
+  return h < 48 ? `${h} h ago` : `${Math.round(h / 24)} days ago`;
+}
+
+function shipping(o) {
+  if (o.shipping_included === true) return "shipping included";
+  if (o.shipping_cost === 0) return "free shipping";
+  if (o.shipping_cost != null) return `+ ${eur(o.shipping_cost)} shipping`;
+  return "shipping not stated";
+}
+
+function provenance(o) {
+  const seen = ago(o.observed_at);
+  return o.source === "idealo"
+    ? `idealo offer by ${o.seller}${seen ? `, last seen by idealo ${seen}` : ""}`
+    : `the shop’s own page${seen ? `, read ${seen}` : ""}`;
+}
+
+function fieldRow([key, label], f) {
+  if (!f) return "";
+  const by = SOURCE[f.source] + (f.corroborated_by ? ` + ${SOURCE[f.corroborated_by]}` : "");
+  return `<dt>${esc(label)}</dt><dd>${esc(f.value)}<span class="st ${esc(f.status)}">${esc(STATUS[f.status])}</span>
+    <span class="src">from ${esc(by)}</span></dd>`;
+}
+
+function showReport(r) {
+  const res = r.resolution, id = res.identity;
+  const facts = FIELDS.map(f => fieldRow(f, id[f[0]])).join("");
+  const unknown = (res.unknown || []).filter(k => UNKNOWN[k]).map(k => UNKNOWN[k]);
+  const deal = r.deal ? `<dt>Deal price</dt><dd><b>${esc(eur(r.deal.amount))}</b>
+      <span class="src">${esc(provenance(r.deal))} · ${esc(shipping(r.deal))}</span></dd>` : "";
+  const was = r.was ? `<dt>Claimed “was”</dt><dd>${esc(eur(r.was.amount))}
+      <span class="src">${esc(provenance(r.was))}</span></dd>`
+    : (r.deal ? `<dt>Claimed “was”</dt><dd><span class="src">none stated by the shop</span></dd>` : "");
+  const m = r.market;
+  const market = m ? `<p class="note">Compared with ${esc(m.history_days)} days of idealo price history
+      (${esc(m.history_window)}, ${esc(m.market)}) and ${esc(m.offers)} current offers, fetched ${esc(ago(m.retrieved_at) || "now")}.</p>` : "";
+  const offers = r.offers.length ? `<h2>Current offers on idealo</h2><ul class="offers">${r.offers.map(o =>
+      `<li><span>${esc(o.seller)}<span class="src">${esc(shipping(o))}${ago(o.observed_at) ? " · seen " + esc(ago(o.observed_at)) : ""}</span></span><b>${esc(eur(o.amount))}</b></li>`).join("")}</ul>` : "";
+  const live = r.deal && r.deal.source === "idealo"
+    ? `<p class="note">This is the price idealo last saw at the shop, not a live price. Check the shop before you buy.</p>` : "";
+  $("#found").innerHTML = `<div class="note"><b>What we found</b>
+      ${res.match ? ` · matched on idealo (${esc(res.confidence)} confidence)` : ""}</div>
+    <dl class="facts">${facts}${deal}${was}</dl>
+    ${unknown.length ? `<p class="note">Not stated by any source: ${esc(unknown.join(", "))}.</p>` : ""}
+    ${live}${market}${offers}`;
+  $("#found").classList.remove("hidden");
+  if (r.verdict && r.status === "judged") return render(r.verdict);
+  const why = (r.reasons || []).concat(r.verdict ? [r.verdict.headline] : []);
+  $("#out").innerHTML = `<p class="err">No verdict for this link.</p>
+    <ul class="reasons">${why.map(x => `<li>${esc(x)}</li>`).join("")}</ul>
+    ${r.deal ? "" : `<p class="note">Try <b>Take a photo</b> of the price tag or a screenshot of the price.</p>`}`;
+  $("#out").classList.remove("hidden");
+}
+
+async function checkUrl(url) {
+  busy(true, "Reading the product page and checking idealo…");
+  try {
+    const r = await fetch("/api/v1/product-url/check", {method: "POST",
+      headers: {"Content-Type": "application/json"}, body: JSON.stringify({url})});
+    const body = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      $("#found").innerHTML = `<p class="err">${esc(body.detail?.message || "This link can’t be checked.")}</p>`;
+      return;
+    }
+    showReport(body);
+  } finally { busy(false); }
+}
+
 fetch("/healthz").then(r => r.json()).then(h => {
+  LIVE = h.source === "idealo";
   $("#src").textContent = h.source === "idealo" ? "Live idealo data" : "Demo data (fictional products)";
   if (h.source !== "demo") return;
   const demos = [
@@ -149,6 +252,7 @@ fetch("/healthz").then(r => r.json()).then(h => {
 $("#deal").onsubmit = async (e) => {
   e.preventDefault();
   const text = $("#free").value.trim(); if (!text) return;
+  if (LIVE && isUrl(text)) return checkUrl(text);  // demo mode and plain text: the offline path
   busy(true, "Reading the product page…");
   try {
     const r = await fetch("/api/extract/text", {method: "POST", headers: {"Content-Type": "application/json"},
