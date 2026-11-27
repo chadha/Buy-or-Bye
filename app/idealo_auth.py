@@ -106,7 +106,7 @@ def make_auth(server_url: str) -> Any:
 
     meta = OAuthClientMetadata(
         client_name="Buy or Bye",
-        redirect_uris=[REDIRECT_URI],  # type: ignore[list-item]
+        redirect_uris=[REDIRECT_URI],
         grant_types=["authorization_code", "refresh_token"],
         response_types=["code"],
         token_endpoint_auth_method="none",
