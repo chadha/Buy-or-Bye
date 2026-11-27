@@ -289,6 +289,16 @@ def identity_from_html(html: str) -> tuple[ProductIdentity, list[str]]:
     return ident, warnings
 
 
+def details_needed(identity: ProductIdentity) -> bool:
+    """Should identity resolution spend an idealo get_product_details call (decision D3)?
+
+    The verified schema (docs/idealo-mcp.md) gives no brand, GTIN or series; beyond the name
+    and URL that search already returns, details add only the product type. So the call is
+    needed only while the category is unknown.
+    """
+    return identity.category is None
+
+
 # --- Full identification -------------------------------------------------------------------------
 
 

@@ -1,6 +1,6 @@
 # BOB-URL-001: URL-to-Product Intelligence
 
-Status: M1 and M2 done (27 Nov 2026); next M3. Priority: P0. Owner: product (chadha); implementation: Claude Code.
+Status: M1, M2 and M3 done (27 Nov 2026); next M4. Priority: P0. Owner: product (chadha); implementation: Claude Code.
 
 A shopper pastes a product URL. Buy or Bye validates it, extracts what the page and URL say
 about the product, identifies the exact product on idealo, compares market prices and price
@@ -61,6 +61,18 @@ Each stage: failing tests first, implementation, `make check` + `make demo`, loc
 | **M4** Identity resolution and verification | Match the URL identity to an idealo product by GTIN, then brand + model (+ variant). Confidence and reasons. Fix shop matching for idealo merchant names like `philips.de (Home-appliances)`. Fields confirmed by idealo become `verified`, disagreements `contradicted`. | XC2011_01 URL → Philips XC2011/01 (brand and family from idealo, verified), same-shop offer €89.99 when idealo lists it; wrong-variant matches rejected. |
 | **M5** Market comparison and evidence | Same-shop price, other offers, 30-day history into the existing verdict. Every observation carries source URL, retrieval time (UTC), seller and market. `POST /api/v1/product-url/check` returns the full report. | Verdict unchanged for identical numbers; every number in the report has provenance. |
 | **M6** UI, golden fixtures, docs | "What we found" shows identity, sources and statuses; golden URL fixtures (recorded, minimal) for the XC2011/01 path; SPEC and demo docs. | Browser check on 375 px; `make demo` green; docs updated. |
+
+## M3 findings (verified live, 27 Nov 2026)
+- `get_product_details` input: `productRef` (required), `country`, `type`. Output has name,
+  URL, specifications, overview, offers, reviews and a price trend, but **no brand, GTIN/EAN or
+  series field**. Full record in `docs/idealo-mcp.md` and `tests/fixtures/idealo/`.
+- For XC2011/01 idealo gives product type "Stielstaubsauger" (stick vacuum). "2000 Series"
+  appears in no idealo field, and the Philips page exposes no structured data, so the family
+  stays **unknown** unless another approved source provides it. It is not inferred.
+- Canonical product ID: the numeric ID in idealo's product URL (203830913), stable, unlike
+  `productRef`.
+- Every idealo call now goes through the daily budget (`app/idealo_usage.py`): a price check
+  costs 3 calls, a details lookup 1 (cached per product for 24 h).
 
 ## Example (test expectation, not a hard-coded rule)
 

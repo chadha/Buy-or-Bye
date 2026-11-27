@@ -68,4 +68,5 @@ def test_idealo_source_defaults_to_the_documented_tools():
         "search": "search_products",
         "history": "get_product_price_history",
         "offers": "get_product_offers",
+        "details": "get_product_details",  # BOB-URL-001 M3, schema verified live
     }
