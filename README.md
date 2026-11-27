@@ -8,7 +8,11 @@ Built at **AI Agents Berlin, "From Research to Commerce" (27 Nov 2026)** for the
 
 ![Buy or Bye](docs/assets/thumbnail.png)
 
-**Demo video (34 s):** [docs/assets/demo.mp4](docs/assets/demo.mp4)
+**Demo video:**
+
+https://github.com/user-attachments/assets/f665af60-bb86-4c2e-82c1-a497af08e85c
+
+Backup copy: [docs/assets/demo.mp4](docs/assets/demo.mp4)
 
 ---
 

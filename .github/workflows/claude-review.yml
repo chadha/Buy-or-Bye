@@ -18,7 +18,12 @@ jobs:
           fetch-depth: 1
       - uses: anthropics/claude-code-action@v1
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Authenticate through GitHub OIDC and Anthropic Workload Identity Federation.
+          # No ANTHROPIC_API_KEY secret is required.
+          anthropic_federation_rule_id: fdrl_014Q2rQnXEgVmQHocuY617J4
+          anthropic_organization_id: 17f6d746-da46-4a40-9f51-d498cdf959e2
+          anthropic_service_account_id: svac_01PChLH3jNiUWqAa3LsHeW5M
+          anthropic_workspace_id: wrkspc_0154uwz8uiBTk4G7kn3SJUwH
           plugin_marketplaces: "https://github.com/anthropics/claude-code.git"
           plugins: "code-review@claude-code-plugins"
           prompt: "/code-review:code-review --comment ${{ github.repository }}/pull/${{ github.event.pull_request.number }}"
