@@ -1,4 +1,10 @@
-# Buy or Bye --- Engineering Harness
+# Buy or Bye
+
+
+
+https://github.com/user-attachments/assets/f665af60-bb86-4c2e-82c1-a497af08e85c
+
+
 
 This folder contains the initial engineering contract for a
 production-oriented, read-only Agentic Commerce MVP.
