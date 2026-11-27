@@ -12,6 +12,14 @@ Backup copy: [docs/assets/demo.mp4](docs/assets/demo.mp4)
 
 Fake discounts are everywhere in e-commerce. Shops show high "was" prices to make deals look better than they are. But those "was" prices often never existed. The deal is fake. German law requires real "was" prices ([PAngV § 11](https://www.gesetze-im-internet.de/pangv/__11.html)), but enforcement is patchy. As a shopper, how do you know if a deal is real?
 
+## Product promise
+
+**Don't analyze the deal. Just ask Buy or Bye.**
+
+Buy or Bye does the investigation and interpretation for the shopper. The customer shares a product link, deal, or photo; Buy or Bye evaluates the available evidence and returns an actionable recommendation with the key reasons and uncertainty. The customer should not have to calculate discounts, interpret price charts, or compare retailers manually. Price history and offer comparisons are inputs to the decision, not the product experience itself.
+
+See [Product positioning](docs/PRODUCT_POSITIONING.md) for the experience principles, decision guardrails, and customer-facing language.
+
 ## What it does, and for whom
 
 <table>
