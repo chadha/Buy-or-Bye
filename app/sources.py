@@ -1,8 +1,8 @@
 """Where price data comes from. The rest of the app only sees the PriceSource protocol.
 
 * DemoSource: synthetic products in `app/demo_data.json`, clearly labelled "demo" in the UI.
-* IdealoMCPSource: the idealo MCP server. Tool names and field mapping are configured from
-  `docs/idealo-mcp.md` once the `data-scout` subagent has probed the real server.
+* IdealoMCPSource: the idealo MCP server (mcp.idealo.com), mapped from idealo's published
+  tool reference. See docs/idealo-mcp.md.
 """
 
 from __future__ import annotations
@@ -52,67 +52,168 @@ class DemoSource:
         return best if best_score >= 0.6 else None
 
 
-class IdealoMCPSource:
-    """Adapter for the idealo MCP server (streamable HTTP).
+def parse_price(text: Any) -> float | None:
+    """idealo formats prices as strings: "1.059,00 €" (DE/AT/FR/IT/ES) or "£999.99" (GB)."""
+    if isinstance(text, (int, float)):
+        return float(text)
+    if not isinstance(text, str):
+        return None
+    raw = re.sub(r"[^0-9,.]", "", text)
+    if not raw:
+        return None
+    # The last separator followed by exactly two digits is the decimal point;
+    # the other separator groups thousands ("1.059,00 €" in DE, "£1,299.00" in GB).
+    m = re.search(r"[.,](\d{2})$", raw)
+    if m:
+        whole = re.sub(r"[.,]", "", raw[: m.start()])
+        raw = f"{whole}.{m.group(1)}"
+    else:
+        raw = re.sub(r"[.,]", "", raw)
+    try:
+        return round(float(raw), 2)
+    except ValueError:
+        return None
 
-    Map tool names with env vars once known: IDEALO_TOOL_SEARCH, IDEALO_TOOL_HISTORY,
-    IDEALO_TOOL_OFFERS. `_to_product` is the single place that converts idealo's response
-    shape into ProductData; fill it from docs/idealo-mcp.md, with a recorded fixture test.
+
+def _match_score(query: str, name: str) -> float:
+    q = _tokens(query)
+    return len(q & _tokens(name)) / len(q) if q else 0.0
+
+
+class IdealoMCPSource:
+    """Adapter for the idealo MCP server (https://mcp.idealo.com/mcp, streamable HTTP + OAuth).
+
+    Tool names and fields follow github.com/idealo/mcp-server-guide (docs/tools.md):
+    search_products -> productRef; get_product_price_history -> priceTrend.history (30 days,
+    daily); get_product_offers -> offers (5 per page). Mapping lives in the `*_from_*` helpers,
+    which are pure and tested against the documented response shapes.
     """
 
     name = "idealo"
 
-    def __init__(self, url: str | None = None) -> None:
-        self.url = url or os.environ.get("IDEALO_MCP_URL", "")
+    def __init__(self, url: str | None = None, country: str | None = None) -> None:
+        self.url = url or os.environ.get("IDEALO_MCP_URL") or "https://mcp.idealo.com/mcp"
+        self.country = (country or os.environ.get("IDEALO_COUNTRY") or "DE").upper()
         self.tools = {
-            k: os.environ.get(f"IDEALO_TOOL_{k.upper()}", "")
-            for k in ("search", "history", "offers")
+            "search": os.environ.get("IDEALO_TOOL_SEARCH") or "search_products",
+            "history": os.environ.get("IDEALO_TOOL_HISTORY") or "get_product_price_history",
+            "offers": os.environ.get("IDEALO_TOOL_OFFERS") or "get_product_offers",
         }
+        self.min_match = float(os.environ.get("IDEALO_MIN_MATCH", "0.6"))
 
-    async def _call(self, tool: str, args: dict[str, Any]) -> Any:
+    async def _call_many(self, calls: list[tuple[str, dict[str, Any]]]) -> list[Any]:
         try:
             from mcp import ClientSession
             from mcp.client import streamable_http as transport
+
+            from .idealo_auth import open_transport
         except ImportError as exc:  # pragma: no cover - optional dependency
             raise SourceError("install the idealo extra: pip install -e '.[idealo]'") from exc
-        # The SDK renamed the client between versions; accept either name.
-        client = getattr(transport, "streamable_http_client", None) or getattr(
-            transport, "streamablehttp_client", None
-        )
-        if client is None:  # pragma: no cover
-            raise SourceError("unsupported mcp SDK version")
-        async with client(self.url) as streams:
+        out: list[Any] = []
+        async with open_transport(transport, self.url) as streams:
             session = ClientSession(streams[0], streams[1])
             async with session:
                 await session.initialize()
-                result = await session.call_tool(tool, args)
-        if getattr(result, "isError", False):
-            raise SourceError(f"idealo tool {tool} returned an error")
-        structured = getattr(result, "structuredContent", None)
-        if structured is not None:
-            return structured
-        texts = [c.text for c in getattr(result, "content", []) if getattr(c, "text", None)]
-        try:
-            return json.loads(texts[0]) if texts else None
-        except ValueError as exc:
-            raise SourceError(f"idealo tool {tool} returned non-JSON content") from exc
+                for tool, args in calls:
+                    result = await session.call_tool(tool, args)
+                    out.append(_unwrap(tool, result))
+        return out
+
+    async def _call(self, tool: str, args: dict[str, Any]) -> Any:
+        return (await self._call_many([(tool, args)]))[0]
 
     async def find(self, query: str) -> ProductData | None:
-        if not self.url or not all(self.tools.values()):
-            raise SourceError(
-                "idealo MCP not configured: set IDEALO_MCP_URL and IDEALO_TOOL_* "
-                "(see docs/idealo-mcp.md)"
-            )
-        found = await self._call(self.tools["search"], {"query": query})
-        return self._to_product(found) if found else None
-
-    @staticmethod
-    def _to_product(raw: Any) -> ProductData:
-        # Filled in on the day from the real response shape (docs/idealo-mcp.md).
-        raise SourceError(
-            "idealo response mapping not implemented yet: run the data-scout "
-            "subagent, then implement IdealoMCPSource._to_product with a test"
+        found = await self._call(self.tools["search"], {"query": query, "country": self.country})
+        hit = best_result(found, query, self.min_match)
+        if hit is None:
+            return None
+        ref = hit["productRef"]
+        args = {"productRef": ref, "country": self.country}
+        hist, offers = await self._call_many(
+            [(self.tools["history"], args), (self.tools["offers"], {**args, "offset": 0})]
         )
+        return ProductData(
+            product_id=str(ref),
+            name=str(hit.get("name") or query),
+            url=hit.get("url"),
+            history=history_from_idealo(hist),
+            offers=offers_from_idealo(offers),
+            source="idealo",
+        )
+
+
+def _field(result: Any, *names: str) -> Any:
+    # MCP SDK 1.x uses camelCase result fields, 2.x snake_case.
+    for n in names:
+        value = getattr(result, n, None)
+        if value is not None:
+            return value
+    return None
+
+
+def _unwrap(tool: str, result: Any) -> Any:
+    if _field(result, "is_error", "isError"):
+        texts = [c.text for c in getattr(result, "content", []) if getattr(c, "text", None)]
+        raise SourceError(f"idealo tool {tool} returned an error: {' '.join(texts)[:200]}")
+    structured = _field(result, "structured_content", "structuredContent")
+    if structured is not None:
+        return structured
+    texts = [c.text for c in getattr(result, "content", []) if getattr(c, "text", None)]
+    try:
+        return json.loads(texts[0]) if texts else None
+    except ValueError as exc:
+        raise SourceError(f"idealo tool {tool} returned non-JSON content") from exc
+
+
+def best_result(found: Any, query: str, min_match: float = 0.6) -> dict[str, Any] | None:
+    """Pick the search result that matches the shopper's product name; None if nothing does."""
+    results = (found or {}).get("results") or []
+    scored = [
+        (_match_score(query, str(r.get("name", ""))), i, r)
+        for i, r in enumerate(results)
+        if r.get("productRef") and r.get("itemType", "PRODUCT") in ("PRODUCT", "CLUSTER")
+    ]
+    if not scored:
+        return None
+    score, _, best = max(scored, key=lambda x: (x[0], -x[1]))
+    return best if score >= min_match else None
+
+
+def history_from_idealo(raw: Any) -> list[PricePoint]:
+    """priceTrend.history -> one PricePoint per day (lowest price of that day), oldest first."""
+    trend = (raw or {}).get("priceTrend") or {}
+    by_day: dict[date, float] = {}
+    for h in trend.get("history") or []:
+        price = parse_price(h.get("price"))
+        iso = h.get("dateTimeISO")
+        if price is None:
+            continue
+        if iso:
+            day = date.fromisoformat(str(iso)[:10])
+        elif isinstance(h.get("dateTime"), (int, float)):
+            from datetime import UTC, datetime
+
+            day = datetime.fromtimestamp(h["dateTime"] / 1000, tz=UTC).date()
+        else:
+            continue
+        # get_product_details reports cents as integers; the history tool reports strings.
+        if isinstance(h.get("price"), int) and h["price"] > 1000 and price > 1000:
+            price = round(price / 100, 2)
+        by_day[day] = min(price, by_day.get(day, price))
+    return [PricePoint(day=d, price=p) for d, p in sorted(by_day.items())]
+
+
+def offers_from_idealo(raw: Any) -> list[Offer]:
+    """offers[] -> Offer(merchant, item price). Shipping is excluded to match the shop's tag."""
+    out: list[Offer] = []
+    for o in (raw or {}).get("offers") or []:
+        price = parse_price(o.get("price"))
+        shop = o.get("shop") or {}
+        name = shop.get("name") or shop.get("merchantName")
+        if price is None or not name:
+            continue
+        out.append(Offer(merchant=str(name), price=price, url=o.get("relocatorUrl")))
+    return out
 
 
 def make_source() -> PriceSource:

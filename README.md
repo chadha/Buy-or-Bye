@@ -53,9 +53,31 @@ make check    # ruff + mypy + pytest
 make demo     # the five demo deals with their expected labels
 ```
 
-Live data: set `PRICE_SOURCE=idealo` and `IDEALO_MCP_URL` (see `.env.example` and
-`docs/idealo-mcp.md`). The idealo field mapping in `app/sources.py` is intentionally not
-implemented until real responses are recorded.
+### Live idealo data
+```bash
+pip install -e ".[dev,idealo]"
+make idealo-login Q="sony wh-1000xm5"   # browser sign-in once, then probes one product
+make live                              # the web app on live idealo data
+```
+Mapping and limits: `docs/idealo-mcp.md`.
+
+### Buy or Bye inside Claude (conversational commerce)
+Run Buy or Bye as an MCP server so Claude can answer "is this discount real?" in a chat.
+The label still comes from `app/verdict.py`; Claude only explains it.
+Add to Claude Desktop's `claude_desktop_config.json` (use the Python where you installed the repo):
+```json
+{
+  "mcpServers": {
+    "buy-or-bye": {
+      "command": "/full/path/to/python",
+      "args": ["-m", "app.mcp_server"],
+      "env": { "PRICE_SOURCE": "idealo" }
+    }
+  }
+}
+```
+Tools: `check_deal` (fetches idealo itself; run `make idealo-login` first) and `judge_deal`
+(Claude passes the responses it already got from the idealo connector).
 
 Relation to the plan: this slice uses `app/` instead of the `api/` / `domain/` /
 `orchestration/` layout in `AGENTS.md`, and has no LangGraph or PostgreSQL yet. Moving it

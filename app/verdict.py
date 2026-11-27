@@ -39,6 +39,8 @@ class Stats:
     points_30: int
     window_30: str
     window_90: str
+    long_days: int = 90  # days the long window really covers (idealo history is 30 days)
+    baseline_days: str = "22–60"
 
 
 def _window(points: list[PricePoint], today: date, start_days: int, end_days: int) -> list[float]:
@@ -59,7 +61,11 @@ def compute_stats(history: list[PricePoint], today: date) -> Stats | None:
             f"{(today - timedelta(days=a)).isoformat()}..{(today - timedelta(days=b)).isoformat()}"
         )
 
+    first = min(p.day for p in history)
+    long_days = max(1, min(90, (today - first).days))
     return Stats(
+        long_days=long_days,
+        baseline_days=f"22–{min(60, long_days)}",
         low_30=min(last_30),
         median_30=median(last_30),
         low_90=min(last_90),
@@ -68,7 +74,7 @@ def compute_stats(history: list[PricePoint], today: date) -> Stats | None:
         peak_last_21=max(recent) if recent else None,
         points_30=len(last_30),
         window_30=fmt(30, 1),
-        window_90=fmt(90, 1),
+        window_90=fmt(long_days, 1),
     )
 
 
@@ -127,7 +133,9 @@ def decide(
     reasons: list[Reason] = []
     ev_typ = (
         Evidence(
-            metric="median daily lowest price, 22–60 days ago", value=round(ref, 2), source=src
+            metric=f"median daily lowest price, {s.baseline_days} days ago",
+            value=round(ref, 2),
+            source=src,
         )
         if ref != s.median_30
         else Evidence(
@@ -141,7 +149,10 @@ def decide(
         metric="lowest price, 30 days", value=round(s.low_30, 2), window=s.window_30, source=src
     )
     ev_low90 = Evidence(
-        metric="lowest price, 90 days", value=round(s.low_90, 2), window=s.window_90, source=src
+        metric=f"lowest price, {s.long_days} days",
+        value=round(s.low_90, 2),
+        window=s.window_90,
+        source=src,
     )
     ev_price = Evidence(metric="deal price", value=price, source="user")
 
@@ -184,7 +195,8 @@ def decide(
             Reason(
                 code="at_90_day_low",
                 polarity="for",
-                text=f"At or near the lowest price of the last 90 days ({_eur(s.low_90)}).",
+                text=f"At or near the lowest price of the last {s.long_days} days "
+                f"({_eur(s.low_90)}).",
                 evidence=[ev_price, ev_low90],
             )
         )
@@ -193,7 +205,7 @@ def decide(
             Reason(
                 code="lower_within_90_days",
                 polarity="neutral",
-                text=f"It has been cheaper: {_eur(s.low_90)} within the last 90 days.",
+                text=f"It has been cheaper: {_eur(s.low_90)} within the last {s.long_days} days.",
                 evidence=[ev_price, ev_low90],
             )
         )
@@ -204,7 +216,7 @@ def decide(
         claimed = (deal.was_price - price) / deal.was_price
         ev_was = Evidence(metric="claimed 'was' price", value=deal.was_price, source="user")
         ev_max = Evidence(
-            metric="highest daily lowest price, 90 days",
+            metric=f"highest daily lowest price, {s.long_days} days",
             value=round(s.max_90, 2),
             window=s.window_90,
             source=src,
@@ -227,7 +239,7 @@ def decide(
                     polarity="against",
                     text=f"Nobody needed to pay {_eur(deal.was_price)}: the "
                     f"lowest idealo price never went above {_eur(s.max_90)} "
-                    f"in 90 days.",
+                    f"in {s.long_days} days.",
                     evidence=[ev_was, ev_max],
                 )
             )
@@ -243,7 +255,7 @@ def decide(
                 f"in the last three weeks.",
                 evidence=[
                     Evidence(
-                        metric="typical price 22–60 days ago",
+                        metric=f"typical price {s.baseline_days} days ago",
                         value=round(s.baseline_before_sale, 2),
                         source=src,
                     ),
@@ -285,7 +297,7 @@ def decide(
         headline = "Bye: this isn't the deal it claims to be."
     elif real_saving >= t.buy_min_saving and at_90_low:
         label = Label.BUY
-        headline = f"Buy: a real {_pct(real_saving)} saving, at the 90-day low."
+        headline = f"Buy: a real {_pct(real_saving)} saving, at the {s.long_days}-day low."
     else:
         label = Label.WAIT
         headline = "Wait: a fair price, but not a special one. Set a price alert."
